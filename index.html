@@ -1,0 +1,319 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#28a745">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        .input-section input, .input-section button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .input-section button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .input-section button:hover {
+            background-color: #218838;
+        }
+        .input-section .cancel-btn {
+            background-color: #6c757d;
+        }
+        .input-section .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .edit-btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .edit-btn:hover {
+            background-color: #0056b3;
+        }
+        .total {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Controle de Gastos</h1>
+        <div class="input-section">
+            <input type="text" id="expenseName" placeholder="Nome do gasto">
+            <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
+            <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
+            <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
+        </div>
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Valor (R$)</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+        </table>
+        <div class="total" id="totalAmount">Total: R$ 0,00</div>
+        <canvas id="expenseChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        // Carregar dados do localStorage ou iniciar com array vazio
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+        let chart;
+        let editingIndex = null;
+
+        // Registrar o Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso:', registration);
+                    })
+                    .catch(error => {
+                        console.error('Erro ao registrar o Service Worker:', error);
+                    });
+            });
+        }
+
+        function formatCurrency(value) {
+            return `R$ ${value.toFixed(2).replace('.', ',')}`;
+        }
+
+        function saveExpenses() {
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+
+        function updateTable() {
+            const tableBody = document.getElementById('expenseTableBody');
+            tableBody.innerHTML = '';
+            expenses.forEach((expense, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${expense.name}</td>
+                    <td>${formatCurrency(expense.amount)}</td>
+                    <td>
+                        <button class="edit-btn" data-index="${index}">Editar</button>
+                        <button class="delete-btn" data-index="${index}">Excluir</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateTotal() {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            document.getElementById('totalAmount').textContent = `Total: ${formatCurrency(total)}`;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: expenses.map(expense => expense.name),
+                    datasets: [{
+                        data: expenses.map(expense => expense.amount),
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function addOrUpdateExpense() {
+            const nameInput = document.getElementById('expenseName');
+            const amountInput = document.getElementById('expenseAmount');
+            const name = nameInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+
+            if (name && !isNaN(amount) && amount > 0) {
+                if (editingIndex !== null) {
+                    // Atualizar gasto existente
+                    expenses[editingIndex] = { name, amount };
+                    editingIndex = null;
+                    document.getElementById('addBtn').textContent = 'Adicionar Gasto';
+                    document.getElementById('cancelBtn').style.display = 'none';
+                } else {
+                    // Adicionar novo gasto
+                    expenses.push({ name, amount });
+                }
+                nameInput.value = '';
+                amountInput.value = '';
+                saveExpenses();
+                updateTable();
+                updateTotal();
+                updateChart();
+            } else {
+                alert('Por favor, insira um nome válido e um valor positivo.');
+            }
+        }
+
+        function editExpense(index) {
+            const expense = expenses[index];
+            document.getElementById('expenseName').value = expense.name;
+            document.getElementById('expenseAmount').value = expense.amount.toFixed(2);
+            document.getElementById('addBtn').textContent = 'Salvar Alterações';
+            document.getElementById('cancelBtn').style.display = 'inline';
+            editingIndex = index;
+        }
+
+        function cancelEdit() {
+            document.getElementById('expenseName').value = '';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('addBtn').textContent = 'Adicionar Gasto';
+            document.getElementById('cancelBtn').style.display = 'none';
+            editingIndex = null;
+        }
+
+        function deleteExpense(index) {
+            if (confirm('Tem certeza que deseja excluir este gasto?')) {
+                expenses.splice(index, 1);
+                saveExpenses();
+                updateTable();
+                updateTotal();
+                updateChart();
+            }
+        }
+
+        // Configurar delegação de eventos
+        document.getElementById('expenseTable').addEventListener('click', (event) => {
+            const index = parseInt(event.target.getAttribute('data-index'));
+            if (!isNaN(index)) {
+                if (event.target.classList.contains('edit-btn')) {
+                    editExpense(index);
+                } else if (event.target.classList.contains('delete-btn')) {
+                    deleteExpense(index);
+                }
+            }
+        });
+
+        // Inicializar a página
+        updateTable();
+        updateTotal();
+        updateChart();
+    </script>
+</body>
+</html>
