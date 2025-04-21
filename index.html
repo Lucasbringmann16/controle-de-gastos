@@ -42,7 +42,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos</title>
+    <title>Controle de Gastos v1.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <style>
@@ -98,6 +98,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px var(--shadow-color);
             transition: background-color 0.3s;
+            position: relative;
         }
         h1 {
             text-align: center;
@@ -133,17 +134,76 @@
         .input-section .cancel-btn:hover {
             background-color: var(--button-cancel-hover);
         }
-        .theme-toggle {
-            margin-left: auto;
-            padding: 10px;
-            background-color: var(--button-cancel-bg);
-            color: #fff;
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
+            padding: 10px;
         }
-        .theme-toggle:hover {
-            background-color: var(--button-cancel-hover);
+        .menu-button svg {
+            width: 24px;
+            height: 24px;
+        }
+        .menu-button svg path {
+            fill: var(--text-color);
+        }
+        .settings-menu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: var(--container-background);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 2px 5px var(--shadow-color);
+            padding: 10px;
+            z-index: 1000;
+        }
+        .settings-menu.active {
+            display: block;
+        }
+        .settings-menu ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .settings-menu li {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-color);
+        }
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background-color: #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toggle-switch input {
+            display: none;
+        }
+        .toggle-switch .slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-switch input:checked + .slider {
+            transform: translateX(20px);
+        }
+        .toggle-switch input:checked ~ .toggle-switch {
+            background-color: var(--button-add-bg);
         }
         table {
             width: 100%;
@@ -198,13 +258,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>Controle de Gastos</h1>
+        <h1>Controle de Gastos v1.1</h1>
+        <button class="menu-button" onclick="toggleSettingsMenu()">
+            <svg viewBox="0 0 24 24">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+        <div class="settings-menu" id="settingsMenu">
+            <ul>
+                <li>
+                    Modo Escuro
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()">
+                        <span class="slider"></span>
+                    </label>
+                </li>
+            </ul>
+        </div>
         <div class="input-section">
             <input type="text" id="expenseName" placeholder="Nome do gasto">
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
             <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
-            <button class="theme-toggle" onclick="toggleTheme()">Modo Escuro</button>
         </div>
         <table id="expenseTable">
             <thead>
@@ -224,7 +299,6 @@
     <script>
         // Carregar dados do localStorage ou iniciar com array vazio
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-
         let chart;
         let editingIndex = null;
 
@@ -241,12 +315,18 @@
             });
         }
 
+        // Gerenciar menu de configurações
+        function toggleSettingsMenu() {
+            const menu = document.getElementById('settingsMenu');
+            menu.classList.toggle('active');
+        }
+
         // Gerenciar tema
         function toggleTheme() {
             const body = document.body;
             const isDark = body.getAttribute('data-theme') === 'dark';
             body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            document.querySelector('.theme-toggle').textContent = isDark ? 'Modo Escuro' : 'Modo Claro';
+            document.getElementById('darkModeToggle').checked = !isDark;
             localStorage.setItem('theme', isDark ? 'light' : 'dark');
         }
 
@@ -254,7 +334,7 @@
         function loadTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
-            document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro';
+            document.getElementById('darkModeToggle').checked = savedTheme === 'dark';
         }
 
         function formatCurrency(value) {
@@ -386,6 +466,15 @@
                 } else if (event.target.classList.contains('delete-btn')) {
                     deleteExpense(index);
                 }
+            }
+        });
+
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('settingsMenu');
+            const menuButton = document.querySelector('.menu-button');
+            if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
+                menu.classList.remove('active');
             }
         });
 
