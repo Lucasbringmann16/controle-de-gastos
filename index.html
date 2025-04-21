@@ -46,47 +46,104 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <style>
+        :root {
+            --background-color: #f4f4f4;
+            --container-background: #fff;
+            --text-color: #333;
+            --border-color: #ddd;
+            --table-header-bg: #f2f2f2;
+            --button-add-bg: #28a745;
+            --button-add-hover: #218838;
+            --button-cancel-bg: #6c757d;
+            --button-cancel-hover: #5a6268;
+            --button-delete-bg: #dc3545;
+            --button-delete-hover: #c82333;
+            --button-edit-bg: #007bff;
+            --button-edit-hover: #0056b3;
+            --total-color: #333;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --background-color: #000;
+            --container-background: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --table-header-bg: #2c2c2c;
+            --button-add-bg: #2ecc71;
+            --button-add-hover: #27ae60;
+            --button-cancel-bg: #95a5a6;
+            --button-cancel-hover: #7f8c8d;
+            --button-delete-bg: #e74c3c;
+            --button-delete-hover: #c0392b;
+            --button-edit-bg: #3498db;
+            --button-edit-hover: #2980b9;
+            --total-color: #e0e0e0;
+            --shadow-color: rgba(255, 255, 255, 0.1);
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: #fff;
+            background: var(--container-background);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px var(--shadow-color);
+            transition: background-color 0.3s;
         }
         h1 {
             text-align: center;
-            color: #333;
+            color: var(--text-color);
         }
         .input-section {
             margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
         }
         .input-section input, .input-section button {
             padding: 10px;
             margin: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
+            background-color: var(--container-background);
+            color: var(--text-color);
         }
         .input-section button {
-            background-color: #28a745;
+            background-color: var(--button-add-bg);
             color: #fff;
             border: none;
             cursor: pointer;
         }
         .input-section button:hover {
-            background-color: #218838;
+            background-color: var(--button-add-hover);
         }
         .input-section .cancel-btn {
-            background-color: #6c757d;
+            background-color: var(--button-cancel-bg);
         }
         .input-section .cancel-btn:hover {
-            background-color: #5a6268;
+            background-color: var(--button-cancel-hover);
+        }
+        .theme-toggle {
+            margin-left: auto;
+            padding: 10px;
+            background-color: var(--button-cancel-bg);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .theme-toggle:hover {
+            background-color: var(--button-cancel-hover);
         }
         table {
             width: 100%;
@@ -94,17 +151,18 @@
             margin-bottom: 20px;
         }
         table, th, td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
         }
         th, td {
             padding: 10px;
             text-align: left;
+            color: var(--text-color);
         }
         th {
-            background-color: #f2f2f2;
+            background-color: var(--table-header-bg);
         }
         .delete-btn {
-            background-color: #dc3545;
+            background-color: var(--button-delete-bg);
             color: #fff;
             border: none;
             padding: 5px 10px;
@@ -113,10 +171,10 @@
             margin-right: 5px;
         }
         .delete-btn:hover {
-            background-color: #c82333;
+            background-color: var(--button-delete-hover);
         }
         .edit-btn {
-            background-color: #007bff;
+            background-color: var(--button-edit-bg);
             color: #fff;
             border: none;
             padding: 5px 10px;
@@ -124,13 +182,14 @@
             cursor: pointer;
         }
         .edit-btn:hover {
-            background-color: #0056b3;
+            background-color: var(--button-edit-hover);
         }
         .total {
             font-size: 1.2em;
             font-weight: bold;
             text-align: right;
             margin-bottom: 20px;
+            color: var(--total-color);
         }
         canvas {
             max-width: 100%;
@@ -145,6 +204,7 @@
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
             <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
+            <button class="theme-toggle" onclick="toggleTheme()">Modo Escuro</button>
         </div>
         <table id="expenseTable">
             <thead>
@@ -179,6 +239,22 @@
                         console.error('Erro ao registrar o Service Worker:', error);
                     });
             });
+        }
+
+        // Gerenciar tema
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.getAttribute('data-theme') === 'dark';
+            body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.querySelector('.theme-toggle').textContent = isDark ? 'Modo Escuro' : 'Modo Claro';
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        }
+
+        // Carregar tema salvo
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro';
         }
 
         function formatCurrency(value) {
@@ -229,7 +305,10 @@
                     responsive: true,
                     plugins: {
                         legend: {
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                color: document.body.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#333'
+                            }
                         },
                         tooltip: {
                             callbacks: {
@@ -311,6 +390,7 @@
         });
 
         // Inicializar a página
+        loadTheme();
         updateTable();
         updateTotal();
         updateChart();
