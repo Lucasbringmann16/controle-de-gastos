@@ -138,17 +138,21 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: none;
-            border: none;
+            background: var(--container-background);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
             cursor: pointer;
-            padding: 10px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .menu-button svg {
             width: 24px;
             height: 24px;
         }
         .menu-button svg path {
-            fill: var(--text-color);
+            fill: var(--text-color) !important;
         }
         .settings-menu {
             display: none;
@@ -261,7 +265,7 @@
         <h1>Controle de Gastos v1.1</h1>
         <button class="menu-button" onclick="toggleSettingsMenu()">
             <svg viewBox="0 0 24 24">
-                <path d="M4 6h16M4 12h16M4 18h16"/>
+                <path d="M3 6h18M3 12h18M3 18h18"/>
             </svg>
         </button>
         <div class="settings-menu" id="settingsMenu">
