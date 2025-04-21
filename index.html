@@ -45,6 +45,8 @@
     <title>Controle de Gastos v1.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous">
     <style>
         :root {
             --background-color: #f4f4f4;
@@ -147,12 +149,9 @@
             align-items: center;
             justify-content: center;
         }
-        .menu-button svg {
-            width: 24px;
-            height: 24px;
-        }
-        .menu-button svg path {
-            fill: var(--text-color) !important;
+        .menu-button i {
+            font-size: 24px;
+            color: var(--text-color);
         }
         .settings-menu {
             display: none;
@@ -264,9 +263,7 @@
     <div class="container">
         <h1>Controle de Gastos v1.1</h1>
         <button class="menu-button" onclick="toggleSettingsMenu()">
-            <svg viewBox="0 0 24 24">
-                <path d="M3 6h18M3 12h18M3 18h18"/>
-            </svg>
+            <i class="fas fa-gear"></i>
         </button>
         <div class="settings-menu" id="settingsMenu">
             <ul>
