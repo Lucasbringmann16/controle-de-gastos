@@ -201,6 +201,11 @@
             align-items: center;
             gap: 10px;
         }
+        .salary-section .salary-value {
+            color: var(--remaining-color);
+            font-weight: bold;
+            margin-left: 10px;
+        }
         .input-section input, .input-section button,
         .salary-section input, .salary-section button {
             padding: 10px;
@@ -278,7 +283,11 @@
             font-weight: bold;
             text-align: right;
             margin-bottom: 20px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
             color: var(--remaining-color);
+            display: inline-block;
         }
         .remaining.negative {
             color: var(--remaining-negative-color);
@@ -381,6 +390,7 @@
         <div class="salary-section">
             <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
             <button onclick="setSalary()">Definir Salário</button>
+            <span id="currentSalary" class="salary-value"></span>
         </div>
         <table id="expenseTable">
             <thead>
@@ -441,7 +451,7 @@
         }
 
         function formatCurrency(value) {
-            return `R$ ${value.toFixed(2).replace('.', ',')}`;
+            return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
         }
 
         function saveExpenses() {
@@ -455,10 +465,16 @@
                 salary = salaryValue;
                 localStorage.setItem('salary', salary);
                 salaryInput.value = '';
+                updateSalaryDisplay();
                 updateRemaining();
             } else {
                 alert('Por favor, insira um valor de salário válido (positivo ou zero).');
             }
+        }
+
+        function updateSalaryDisplay() {
+            const salaryElement = document.getElementById('currentSalary');
+            salaryElement.textContent = salary > 0 ? formatCurrency(salary) : '';
         }
 
         function updateTable() {
@@ -479,13 +495,13 @@
         }
 
         function updateTotal() {
-            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const total = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
             document.getElementById('totalAmount').textContent = `Total: ${formatCurrency(total)}`;
             return total;
         }
 
         function updateRemaining() {
-            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const total = updateTotal();
             const remaining = salary - total;
             const remainingElement = document.getElementById('remainingAmount');
             remainingElement.textContent = `Restante: ${formatCurrency(remaining)}`;
@@ -548,7 +564,6 @@
                 amountInput.value = '';
                 saveExpenses();
                 updateTable();
-                updateTotal();
                 updateRemaining();
                 updateChart();
             } else {
@@ -578,7 +593,6 @@
                 expenses.splice(index, 1);
                 saveExpenses();
                 updateTable();
-                updateTotal();
                 updateRemaining();
                 updateChart();
             }
@@ -608,7 +622,7 @@
         // Inicializar a página
         loadTheme();
         updateTable();
-        updateTotal();
+        updateSalaryDisplay();
         updateRemaining();
         updateChart();
     </script>
