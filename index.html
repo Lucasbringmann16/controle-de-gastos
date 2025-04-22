@@ -63,6 +63,8 @@
             --button-edit-bg: #007bff;
             --button-edit-hover: #0056b3;
             --total-color: #333;
+            --remaining-color: #28a745;
+            --remaining-negative-color: #dc3545;
             --shadow-color: rgba(0, 0, 0, 0.1);
         }
 
@@ -81,6 +83,8 @@
             --button-edit-bg: #3498db;
             --button-edit-hover: #2980b9;
             --total-color: #e0e0e0;
+            --remaining-color: #2ecc71;
+            --remaining-negative-color: #e74c3c;
             --shadow-color: rgba(255, 255, 255, 0.1);
         }
 
@@ -190,7 +194,15 @@
             align-items: center;
             gap: 10px;
         }
-        .input-section input, .input-section button {
+        .salary-section {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-section input, .input-section button,
+        .salary-section input, .salary-section button {
             padding: 10px;
             margin: 5px;
             border: 1px solid var(--border-color);
@@ -198,13 +210,15 @@
             background-color: var(--container-background);
             color: var(--text-color);
         }
-        .input-section button {
+        .input-section button,
+        .salary-section button {
             background-color: var(--button-add-bg);
             color: #fff;
             border: none;
             cursor: pointer;
         }
-        .input-section button:hover {
+        .input-section button:hover,
+        .salary-section button:hover {
             background-color: var(--button-add-hover);
         }
         .input-section .cancel-btn {
@@ -256,8 +270,18 @@
             font-size: 1.2em;
             font-weight: bold;
             text-align: right;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             color: var(--total-color);
+        }
+        .remaining {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: right;
+            margin-bottom: 20px;
+            color: var(--remaining-color);
+        }
+        .remaining.negative {
+            color: var(--remaining-negative-color);
         }
         canvas {
             max-width: 100%;
@@ -287,14 +311,15 @@
                 top: 80px;
                 right: 15px;
             }
-            .input-section input, .input-section button {
+            .input-section input, .input-section button,
+            .salary-section input, .salary-section button {
                 padding: 8px;
                 margin: 3px;
             }
             th, td {
                 padding: 8px;
             }
-            .total {
+            .total, .remaining {
                 font-size: 1.1em;
             }
         }
@@ -313,7 +338,8 @@
                 top: 70px;
                 right: 10px;
             }
-            .input-section input, .input-section button {
+            .input-section input, .input-section button,
+            .salary-section input, .salary-section button {
                 padding: 6px;
                 margin: 2px;
             }
@@ -321,7 +347,7 @@
                 padding: 6px;
                 font-size: 0.9em;
             }
-            .total {
+            .total, .remaining {
                 font-size: 1em;
             }
         }
@@ -352,6 +378,10 @@
             <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
         </div>
+        <div class="salary-section">
+            <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
+            <button onclick="setSalary()">Definir Salário</button>
+        </div>
         <table id="expenseTable">
             <thead>
                 <tr>
@@ -363,6 +393,7 @@
             <tbody id="expenseTableBody"></tbody>
         </table>
         <div class="total" id="totalAmount">Total: R$ 0,00</div>
+        <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
         <canvas id="expenseChart"></canvas>
     </div>
 
@@ -370,6 +401,7 @@
     <script>
         // Carregar dados do localStorage ou iniciar com array vazio
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        let salary = parseFloat(localStorage.getItem('salary')) || 0;
         let chart;
         let editingIndex = null;
 
@@ -416,6 +448,19 @@
             localStorage.setItem('expenses', JSON.stringify(expenses));
         }
 
+        function setSalary() {
+            const salaryInput = document.getElementById('salaryAmount');
+            const salaryValue = parseFloat(salaryInput.value);
+            if (!isNaN(salaryValue) && salaryValue >= 0) {
+                salary = salaryValue;
+                localStorage.setItem('salary', salary);
+                salaryInput.value = '';
+                updateRemaining();
+            } else {
+                alert('Por favor, insira um valor de salário válido (positivo ou zero).');
+            }
+        }
+
         function updateTable() {
             const tableBody = document.getElementById('expenseTableBody');
             tableBody.innerHTML = '';
@@ -436,6 +481,15 @@
         function updateTotal() {
             const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
             document.getElementById('totalAmount').textContent = `Total: ${formatCurrency(total)}`;
+            return total;
+        }
+
+        function updateRemaining() {
+            const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const remaining = salary - total;
+            const remainingElement = document.getElementById('remainingAmount');
+            remainingElement.textContent = `Restante: ${formatCurrency(remaining)}`;
+            remainingElement.classList.toggle('negative', remaining < 0);
         }
 
         function updateChart() {
@@ -495,6 +549,7 @@
                 saveExpenses();
                 updateTable();
                 updateTotal();
+                updateRemaining();
                 updateChart();
             } else {
                 alert('Por favor, insira um nome válido e um valor positivo.');
@@ -524,6 +579,7 @@
                 saveExpenses();
                 updateTable();
                 updateTotal();
+                updateRemaining();
                 updateChart();
             }
         }
@@ -553,6 +609,7 @@
         loadTheme();
         updateTable();
         updateTotal();
+        updateRemaining();
         updateChart();
     </script>
 </body>
