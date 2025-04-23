@@ -159,6 +159,14 @@
             justify-content: space-between;
             color: var(--text-color);
         }
+        .settings-menu input[type="number"] {
+            width: 50px;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--container-background);
+            color: var(--text-color);
+        }
         .toggle-switch {
             position: relative;
             width: 40px;
@@ -348,6 +356,10 @@
                 padding: 8px;
                 margin: 3px;
             }
+            .settings-menu input[type="number"] {
+                padding: 4px;
+                width: 45px;
+            }
             th, td {
                 padding: 8px;
             }
@@ -376,6 +388,10 @@
                 padding: 6px;
                 margin: 2px;
             }
+            .settings-menu input[type="number"] {
+                padding: 3px;
+                width: 40px;
+            }
             th, td {
                 padding: 6px;
                 font-size: 0.9em;
@@ -402,6 +418,10 @@
                         <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()">
                         <span class="slider"></span>
                     </label>
+                </li>
+                <li>
+                    Dia de Pagamento
+                    <input type="number" id="paymentDay" min="1" max="31" value="1" onchange="setPaymentDay()">
                 </li>
             </ul>
         </div>
@@ -470,10 +490,18 @@
         let chart;
         let editingIndex = null;
 
-        // Função para obter o mês atual (baseado na data atual)
+        // Função para obter o mês atual ou próximo com base no dia de pagamento
         function getCurrentMonth() {
-            const date = new Date();
-            return months[date.getMonth()];
+            const today = new Date();
+            const currentDay = today.getDate();
+            const currentMonthIndex = today.getMonth();
+            const paymentDay = parseInt(localStorage.getItem('paymentDay')) || 1;
+
+            // Se o dia atual for maior que o dia de pagamento, abrir no próximo mês
+            if (currentDay > paymentDay && currentMonthIndex < 11) {
+                return months[currentMonthIndex + 1];
+            }
+            return months[currentMonthIndex];
         }
 
         // Inicializar dados para todos os meses, se não existirem
@@ -503,7 +531,7 @@
             updateChart();
         }
 
-        // Definir o mês atual como padrão no <select>
+        // Definir o mês atual ou próximo como padrão no <select>
         function setDefaultMonth() {
             const monthSelect = document.getElementById('monthSelect');
             monthSelect.value = currentMonth;
@@ -542,6 +570,27 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
             document.getElementById('darkModeToggle').checked = savedTheme === 'dark';
+        }
+
+        // Definir e salvar o dia de pagamento
+        function setPaymentDay() {
+            const paymentDayInput = document.getElementById('paymentDay');
+            let paymentDay = parseInt(paymentDayInput.value);
+            if (isNaN(paymentDay) || paymentDay < 1 || paymentDay > 31) {
+                paymentDay = 1;
+                paymentDayInput.value = paymentDay;
+            }
+            localStorage.setItem('paymentDay', paymentDay);
+            // Atualizar o mês exibido com base no novo dia de pagamento
+            currentMonth = getCurrentMonth();
+            setDefaultMonth();
+            loadMonthData();
+        }
+
+        // Carregar o dia de pagamento salvo
+        function loadPaymentDay() {
+            const paymentDay = localStorage.getItem('paymentDay') || 1;
+            document.getElementById('paymentDay').value = paymentDay;
         }
 
         function formatCurrency(value) {
@@ -826,6 +875,7 @@
         initializeMonthlyData();
         setDefaultMonth();
         loadTheme();
+        loadPaymentDay();
         loadMonthData();
     </script>
 </body>
