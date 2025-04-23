@@ -187,6 +187,23 @@
         .toggle-switch input:checked ~ .toggle-switch {
             background-color: var(--button-add-bg);
         }
+        .month-selector {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .month-selector label {
+            font-weight: bold;
+        }
+        .month-selector select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--container-background);
+            color: var(--text-color);
+            cursor: pointer;
+        }
         .input-section {
             margin-bottom: 20px;
             display: flex;
@@ -320,6 +337,7 @@
                 top: 80px;
                 right: 15px;
             }
+            .month-selector select,
             .input-section input, .input-section button,
             .salary-section input, .salary-section button {
                 padding: 8px;
@@ -347,6 +365,7 @@
                 top: 70px;
                 right: 10px;
             }
+            .month-selector select,
             .input-section input, .input-section button,
             .salary-section input, .salary-section button {
                 padding: 6px;
@@ -381,6 +400,23 @@
                 </li>
             </ul>
         </div>
+        <div class="month-selector">
+            <label for="monthSelect">Selecione o Mês:</label>
+            <select id="monthSelect" onchange="changeMonth()">
+                <option value="Janeiro">Janeiro</option>
+                <option value="Fevereiro">Fevereiro</option>
+                <option value="Março">Março</option>
+                <option value="Abril">Abril</option>
+                <option value="Maio">Maio</option>
+                <option value="Junho">Junho</option>
+                <option value="Julho">Julho</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Setembro">Setembro</option>
+                <option value="Outubro">Outubro</option>
+                <option value="Novembro">Novembro</option>
+                <option value="Dezembro">Dezembro</option>
+            </select>
+        </div>
         <div class="input-section">
             <input type="text" id="expenseName" placeholder="Nome do gasto">
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
@@ -409,11 +445,58 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>
-        // Carregar dados do localStorage ou iniciar com array vazio
-        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-        let salary = parseFloat(localStorage.getItem('salary')) || 0;
+        // Lista de meses para facilitar o acesso
+        const months = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+
+        // Carregar dados do localStorage ou iniciar com objeto vazio
+        let monthlyData = JSON.parse(localStorage.getItem('monthlyData')) || {};
+        let currentMonth = getCurrentMonth();
+        let expenses = [];
+        let salary = 0;
         let chart;
         let editingIndex = null;
+
+        // Função para obter o mês atual (baseado na data atual)
+        function getCurrentMonth() {
+            const date = new Date();
+            return months[date.getMonth()];
+        }
+
+        // Inicializar dados para todos os meses, se não existirem
+        function initializeMonthlyData() {
+            months.forEach(month => {
+                if (!monthlyData[month]) {
+                    monthlyData[month] = { expenses: [], salary: 0 };
+                }
+            });
+            saveMonthlyData();
+        }
+
+        // Salvar dados no localStorage
+        function saveMonthlyData() {
+            localStorage.setItem('monthlyData', JSON.stringify(monthlyData));
+        }
+
+        // Carregar dados do mês selecionado
+        function loadMonthData() {
+            const month = document.getElementById('monthSelect').value;
+            currentMonth = month;
+            expenses = monthlyData[month].expenses || [];
+            salary = monthlyData[month].salary || 0;
+            updateTable();
+            updateSalaryDisplay();
+            updateRemaining();
+            updateChart();
+        }
+
+        // Definir o mês atual como padrão no <select>
+        function setDefaultMonth() {
+            const monthSelect = document.getElementById('monthSelect');
+            monthSelect.value = currentMonth;
+        }
 
         // Registrar o Service Worker
         if ('serviceWorker' in navigator) {
@@ -454,16 +537,13 @@
             return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
         }
 
-        function saveExpenses() {
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-        }
-
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
             const salaryValue = parseFloat(salaryInput.value);
             if (!isNaN(salaryValue) && salaryValue >= 0) {
                 salary = salaryValue;
-                localStorage.setItem('salary', salary);
+                monthlyData[currentMonth].salary = salary;
+                saveMonthlyData();
                 salaryInput.value = '';
                 updateSalaryDisplay();
                 updateRemaining();
@@ -560,9 +640,10 @@
                     // Adicionar novo gasto
                     expenses.push({ name, amount });
                 }
+                monthlyData[currentMonth].expenses = expenses;
                 nameInput.value = '';
                 amountInput.value = '';
-                saveExpenses();
+                saveMonthlyData();
                 updateTable();
                 updateRemaining();
                 updateChart();
@@ -591,11 +672,16 @@
         function deleteExpense(index) {
             if (confirm('Tem certeza que deseja excluir este gasto?')) {
                 expenses.splice(index, 1);
-                saveExpenses();
+                monthlyData[currentMonth].expenses = expenses;
+                saveMonthlyData();
                 updateTable();
                 updateRemaining();
                 updateChart();
             }
+        }
+
+        function changeMonth() {
+            loadMonthData();
         }
 
         // Configurar delegação de eventos
@@ -620,11 +706,10 @@
         });
 
         // Inicializar a página
+        initializeMonthlyData();
+        setDefaultMonth();
         loadTheme();
-        updateTable();
-        updateSalaryDisplay();
-        updateRemaining();
-        updateChart();
+        loadMonthData();
     </script>
 </body>
 </html>
