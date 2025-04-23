@@ -623,7 +623,7 @@
                     }]
                 },
                 options: {
-                    responsive: true,
+                    responsive: true;
                     plugins: {
                         legend: {
                             position: 'top',
@@ -669,12 +669,8 @@
                     isRecurring: true
                 };
 
-                if (i === startMonthIndex) {
-                    if (editingIndex !== null) {
-                        monthlyData[targetMonth].expenses[editingIndex] = newExpense;
-                    } else {
-                        monthlyData[targetMonth].expenses.push(newExpense);
-                    }
+                if (i === startMonthIndex && editingIndex !== null) {
+                    monthlyData[targetMonth].expenses[editingIndex] = newExpense;
                 } else {
                     monthlyData[targetMonth].expenses.push(newExpense);
                 }
@@ -726,8 +722,8 @@
                     }
                     expenses[editingIndex] = newExpense;
                     monthlyData[currentMonth].expenses = expenses;
-                } else {
-                    // Adicionar novo gasto
+                } else if (!isRecurring) {
+                    // Adicionar novo gasto não recorrente
                     if (expenseMonth === currentMonth) {
                         expenses.push(newExpense);
                         monthlyData[currentMonth].expenses = expenses;
