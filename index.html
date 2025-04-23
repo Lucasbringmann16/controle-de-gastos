@@ -211,6 +211,11 @@
             align-items: center;
             gap: 10px;
         }
+        .input-section .recurring-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
         .salary-section {
             margin-bottom: 20px;
             display: flex;
@@ -420,6 +425,11 @@
         <div class="input-section">
             <input type="text" id="expenseName" placeholder="Nome do gasto">
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
+            <input type="date" id="expenseDate" required>
+            <label class="recurring-label">
+                <input type="checkbox" id="isRecurring">
+                Recorrente
+            </label>
             <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
         </div>
@@ -433,6 +443,7 @@
                 <tr>
                     <th>Descrição</th>
                     <th>Valor (R$)</th>
+                    <th>Data de Pagamento</th>
                     <th>Ação</th>
                 </tr>
             </thead>
@@ -537,6 +548,14 @@
             return `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
         }
 
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
             const salaryValue = parseFloat(salaryInput.value);
@@ -565,6 +584,7 @@
                 row.innerHTML = `
                     <td>${expense.name}</td>
                     <td>${formatCurrency(expense.amount)}</td>
+                    <td>${formatDate(expense.date)}</td>
                     <td>
                         <button class="edit-btn" data-index="${index}">Editar</button>
                         <button class="delete-btn" data-index="${index}">Excluir</button>
@@ -623,32 +643,116 @@
             });
         }
 
+        function getMonthIndex(monthName) {
+            return months.indexOf(monthName);
+        }
+
+        function getLastDayOfMonth(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function addRecurringExpenses(expense, startMonthIndex) {
+            const startDate = new Date(expense.date);
+            const day = startDate.getDate();
+            const year = startDate.getFullYear();
+
+            for (let i = startMonthIndex; i < months.length; i++) {
+                const targetMonth = months[i];
+                const lastDay = getLastDayOfMonth(year, i);
+                const targetDay = Math.min(day, lastDay);
+                const targetDate = new Date(year, i, targetDay).toISOString().split('T')[0];
+
+                const newExpense = {
+                    name: expense.name,
+                    amount: expense.amount,
+                    date: targetDate,
+                    isRecurring: true
+                };
+
+                if (i === startMonthIndex) {
+                    if (editingIndex !== null) {
+                        monthlyData[targetMonth].expenses[editingIndex] = newExpense;
+                    } else {
+                        monthlyData[targetMonth].expenses.push(newExpense);
+                    }
+                } else {
+                    monthlyData[targetMonth].expenses.push(newExpense);
+                }
+            }
+            saveMonthlyData();
+        }
+
+        function removeRecurringExpenses(expense, startMonthIndex, removeAll = false) {
+            const startDate = new Date(expense.date);
+            const year = startDate.getFullYear();
+            const expenseName = expense.name;
+            const expenseAmount = expense.amount;
+
+            for (let i = startMonthIndex; i < months.length; i++) {
+                const targetMonth = months[i];
+                const expensesInMonth = monthlyData[targetMonth].expenses;
+                monthlyData[targetMonth].expenses = expensesInMonth.filter(exp => {
+                    const expDate = new Date(exp.date);
+                    const isSameExpense = exp.name === expenseName && exp.amount === expenseAmount && exp.isRecurring;
+                    if (!isSameExpense) return true;
+                    if (removeAll) return false;
+                    return i < startMonthIndex;
+                });
+            }
+            saveMonthlyData();
+        }
+
         function addOrUpdateExpense() {
             const nameInput = document.getElementById('expenseName');
             const amountInput = document.getElementById('expenseAmount');
+            const dateInput = document.getElementById('expenseDate');
+            const isRecurringInput = document.getElementById('isRecurring');
             const name = nameInput.value.trim();
             const amount = parseFloat(amountInput.value);
+            const date = dateInput.value;
+            const isRecurring = isRecurringInput.checked;
 
-            if (name && !isNaN(amount) && amount > 0) {
+            if (name && !isNaN(amount) && amount > 0 && date) {
+                const expenseMonth = months[new Date(date).getMonth()];
+                const startMonthIndex = getMonthIndex(expenseMonth);
+
+                const newExpense = { name, amount, date, isRecurring };
+
                 if (editingIndex !== null) {
                     // Atualizar gasto existente
-                    expenses[editingIndex] = { name, amount };
-                    editingIndex = null;
-                    document.getElementById('addBtn').textContent = 'Adicionar Gasto';
-                    document.getElementById('cancelBtn').style.display = 'none';
+                    const oldExpense = expenses[editingIndex];
+                    if (oldExpense.isRecurring) {
+                        removeRecurringExpenses(oldExpense, getMonthIndex(currentMonth));
+                    }
+                    expenses[editingIndex] = newExpense;
+                    monthlyData[currentMonth].expenses = expenses;
                 } else {
                     // Adicionar novo gasto
-                    expenses.push({ name, amount });
+                    if (expenseMonth === currentMonth) {
+                        expenses.push(newExpense);
+                        monthlyData[currentMonth].expenses = expenses;
+                    } else {
+                        monthlyData[expenseMonth].expenses.push(newExpense);
+                    }
                 }
-                monthlyData[currentMonth].expenses = expenses;
+
+                if (isRecurring) {
+                    addRecurringExpenses(newExpense, startMonthIndex);
+                }
+
                 nameInput.value = '';
                 amountInput.value = '';
+                dateInput.value = '';
+                isRecurringInput.checked = false;
+                if (editingIndex !== null) {
+                    document.getElementById('addBtn').textContent = 'Adicionar Gasto';
+                    document.getElementById('cancelBtn').style.display = 'none';
+                    editingIndex = null;
+                }
                 saveMonthlyData();
-                updateTable();
-                updateRemaining();
-                updateChart();
+                loadMonthData();
             } else {
-                alert('Por favor, insira um nome válido e um valor positivo.');
+                alert('Por favor, preencha todos os campos corretamente: nome, valor positivo e data de pagamento.');
             }
         }
 
@@ -656,6 +760,8 @@
             const expense = expenses[index];
             document.getElementById('expenseName').value = expense.name;
             document.getElementById('expenseAmount').value = expense.amount.toFixed(2);
+            document.getElementById('expenseDate').value = expense.date;
+            document.getElementById('isRecurring').checked = expense.isRecurring;
             document.getElementById('addBtn').textContent = 'Salvar Alterações';
             document.getElementById('cancelBtn').style.display = 'inline';
             editingIndex = index;
@@ -664,19 +770,34 @@
         function cancelEdit() {
             document.getElementById('expenseName').value = '';
             document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDate').value = '';
+            document.getElementById('isRecurring').checked = false;
             document.getElementById('addBtn').textContent = 'Adicionar Gasto';
             document.getElementById('cancelBtn').style.display = 'none';
             editingIndex = null;
         }
 
         function deleteExpense(index) {
-            if (confirm('Tem certeza que deseja excluir este gasto?')) {
-                expenses.splice(index, 1);
-                monthlyData[currentMonth].expenses = expenses;
-                saveMonthlyData();
-                updateTable();
-                updateRemaining();
-                updateChart();
+            const expense = expenses[index];
+            let confirmMessage = 'Tem certeza que deseja excluir este gasto?';
+            let removeAll = false;
+
+            if (expense.isRecurring) {
+                const choice = confirm('Este é um gasto recorrente. Deseja excluir apenas neste mês ou em todos os meses futuros?\n\n- OK: Excluir apenas neste mês\n- Cancelar: Excluir em todos os meses futuros');
+                removeAll = !choice;
+                confirmMessage = removeAll ? 'Excluir este gasto em todos os meses futuros?' : 'Excluir este gasto apenas neste mês?';
+            }
+
+            if (confirm(confirmMessage)) {
+                if (expense.isRecurring) {
+                    const startMonthIndex = getMonthIndex(currentMonth);
+                    removeRecurringExpenses(expense, startMonthIndex, removeAll);
+                } else {
+                    expenses.splice(index, 1);
+                    monthlyData[currentMonth].expenses = expenses;
+                    saveMonthlyData();
+                }
+                loadMonthData();
             }
         }
 
