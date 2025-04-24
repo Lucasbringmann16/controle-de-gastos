@@ -598,10 +598,9 @@
         }
 
         function formatDate(dateString) {
-            const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            // Extrair ano, mês e dia diretamente da string YYYY-MM-DD
+            const [year, month, day] = dateString.split('-');
+            // month já está no formato 01-12, e day no formato 01-31
             return `${day}/${month}/${year}`;
         }
 
@@ -701,15 +700,15 @@
         }
 
         function addRecurringExpenses(expense, startMonthIndex) {
-            const startDate = new Date(expense.date);
-            const day = startDate.getDate();
-            const year = startDate.getFullYear();
+            const [year, month, day] = expense.date.split('-');
+            const parsedYear = parseInt(year);
+            const parsedDay = parseInt(day);
 
             for (let i = startMonthIndex; i < months.length; i++) {
                 const targetMonth = months[i];
-                const lastDay = getLastDayOfMonth(year, i);
-                const targetDay = Math.min(day, lastDay);
-                const targetDate = new Date(year, i, targetDay).toISOString().split('T')[0];
+                const lastDay = getLastDayOfMonth(parsedYear, i);
+                const targetDay = Math.min(parsedDay, lastDay);
+                const targetDate = `${parsedYear}-${String(i + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
 
                 const newExpense = {
                     name: expense.name,
@@ -728,8 +727,8 @@
         }
 
         function removeRecurringExpenses(expense, startMonthIndex, removeAll = false) {
-            const startDate = new Date(expense.date);
-            const year = startDate.getFullYear();
+            const [year] = expense.date.split('-');
+            const parsedYear = parseInt(year);
             const expenseName = expense.name;
             const expenseAmount = expense.amount;
 
@@ -737,7 +736,7 @@
                 const targetMonth = months[i];
                 const expensesInMonth = monthlyData[targetMonth].expenses;
                 monthlyData[targetMonth].expenses = expensesInMonth.filter(exp => {
-                    const expDate = new Date(exp.date);
+                    const [expYear] = exp.date.split('-');
                     const isSameExpense = exp.name === expenseName && exp.amount === expenseAmount && exp.isRecurring;
                     if (!isSameExpense) return true;
                     if (removeAll) return false;
@@ -758,7 +757,8 @@
             const isRecurring = isRecurringInput.checked;
 
             if (name && !isNaN(amount) && amount > 0 && date) {
-                const expenseMonth = months[new Date(date).getMonth()];
+                const [year, month] = date.split('-');
+                const expenseMonth = months[parseInt(month) - 1];
                 const startMonthIndex = getMonthIndex(expenseMonth);
 
                 const newExpense = { name, amount, date, isRecurring };
@@ -792,7 +792,7 @@
                 if (editingIndex !== null) {
                     document.getElementById('addBtn').textContent = 'Adicionar Gasto';
                     document.getElementById('cancelBtn').style.display = 'none';
-                    editingIndex = null;
+                    editingIndexleted = null;
                 }
                 saveMonthlyData();
                 loadMonthData();
