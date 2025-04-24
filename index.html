@@ -236,6 +236,10 @@
             gap: 6px;
             font-size: 0.9em;
         }
+        .input-section .date-label {
+            font-size: 0.9em;
+            font-weight: 500;
+        }
         .salary-section {
             margin-bottom: 25px;
             display: flex;
@@ -303,38 +307,6 @@
         .input-section .cancel-btn:hover {
             background: var(--button-cancel-hover);
             box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-        }
-        /* Estilizar o campo de data */
-        input[type="date"] {
-            position: relative;
-            cursor: pointer;
-        }
-        input[type="date"]::-webkit-datetime-edit {
-            color: var(--text-color);
-        }
-        input[type="date"]::-webkit-datetime-edit-text,
-        input[type="date"]::-webkit-datetime-edit-month-field,
-        input[type="date"]::-webkit-datetime-edit-day-field,
-        input[type="date"]::-webkit-datetime-edit-year-field {
-            color: var(--text-color);
-        }
-        input[type="date"]:invalid::-webkit-datetime-edit {
-            color: transparent !important;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.5);
-            cursor: pointer;
-        }
-        [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.8);
-        }
-        input[type="date"]::placeholder {
-            color: #a0a0a0;
-            opacity: 1;
-            font-style: italic;
-        }
-        [data-theme="dark"] input[type="date"]::placeholder {
-            color: #888;
         }
         table {
             width: 100%;
@@ -585,7 +557,8 @@
         <div class="input-section">
             <input type="text" id="expenseName" placeholder="Nome do gasto">
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
-            <input type="date" id="expenseDate" placeholder="DD/MM/AAAA" required>
+            <label for="expenseDate" class="date-label">Selecionar data:</label>
+            <input type="date" id="expenseDate" required>
             <label class="recurring-label">
                 <input type="checkbox" id="isRecurring">
                 Recorrente
@@ -754,12 +727,6 @@
             return `${day}/${month}/${year}`;
         }
 
-        function parseDateToStandardFormat(dateString) {
-            // Converte de DD/MM/AAAA para AAAA-MM-DD
-            const [day, month, year] = dateString.split('/');
-            return `${year}-${month}-${day}`;
-        }
-
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
             const salaryOption = document.querySelector('input[name="salaryOption"]:checked').value;
@@ -841,7 +808,7 @@
                     }]
                 },
                 options: {
-                    responsive: true,
+                    responsive: true;
                     plugins: {
                         legend: {
                             position: 'top',
@@ -927,13 +894,8 @@
             const isRecurringInput = document.getElementById('isRecurring');
             const name = nameInput.value.trim();
             const amount = parseFloat(amountInput.value);
-            let date = dateInput.value;
+            const date = dateInput.value;
             const isRecurring = isRecurringInput.checked;
-
-            // Converter a data do formato DD/MM/AAAA para AAAA-MM-DD, se necessário
-            if (date.includes('/')) {
-                date = parseDateToStandardFormat(date);
-            }
 
             if (name && !isNaN(amount) && amount > 0 && date) {
                 const [year, month] = date.split('-');
@@ -965,7 +927,6 @@
                 nameInput.value = '';
                 amountInput.value = '';
                 dateInput.value = '';
-                dateInput.setAttribute('data-display-value', '');
                 isRecurringInput.checked = false;
                 if (editingIndex !== null) {
                     document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
@@ -983,10 +944,7 @@
             const expense = expenses[index];
             document.getElementById('expenseName').value = expense.name;
             document.getElementById('expenseAmount').value = expense.amount.toFixed(2);
-            const formattedDate = formatDate(expense.date);
-            const dateInput = document.getElementById('expenseDate');
-            dateInput.value = expense.date; // Formato AAAA-MM-DD para o input
-            dateInput.setAttribute('data-display-value', formattedDate);
+            document.getElementById('expenseDate').value = expense.date;
             document.getElementById('isRecurring').checked = expense.isRecurring;
             document.getElementById('addBtn').innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
             document.getElementById('cancelBtn').style.display = 'inline';
@@ -994,11 +952,9 @@
         }
 
         function cancelEdit() {
-            const dateInput = document.getElementById('expenseDate');
             document.getElementById('expenseName').value = '';
             document.getElementById('expenseAmount').value = '';
-            dateInput.value = '';
-            dateInput.setAttribute('data-display-value', '');
+            document.getElementById('expenseDate').value = '';
             document.getElementById('isRecurring').checked = false;
             document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
             document.getElementById('cancelBtn').style.display = 'none';
@@ -1033,7 +989,7 @@
             loadMonthData();
         }
 
-        // Configurar delegação de eventos para a tabela
+        // Configurar delegação de eventos
         document.getElementById('expenseTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
             if (!isNaN(index)) {
@@ -1051,17 +1007,6 @@
             const menuButton = document.querySelector('.menu-button');
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
                 menu.classList.remove('active');
-            }
-        });
-
-        // Manipular o campo de data para exibir DD/MM/AAAA
-        const dateInput = document.getElementById('expenseDate');
-        dateInput.addEventListener('change', (event) => {
-            if (event.target.value) {
-                const formattedDate = formatDate(event.target.value);
-                event.target.setAttribute('data-display-value', formattedDate);
-            } else {
-                event.target.setAttribute('data-display-value', '');
             }
         });
 
