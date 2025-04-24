@@ -42,18 +42,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v1.1</title>
+    <title>Controle de Gastos v1.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/50/000000/money-bag.png">
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous">
     <style>
         :root {
-            --background-color: #f4f4f4;
-            --container-background: #fff;
-            --text-color: #333;
-            --border-color: #ddd;
-            --table-header-bg: #f2f2f2;
+            --background-color: #f5f7fa;
+            --container-background: #ffffff;
+            --text-color: #2d3436;
+            --border-color: #e0e0e0;
+            --table-header-bg: #f8f9fa;
             --button-add-bg: #28a745;
             --button-add-hover: #218838;
             --button-cancel-bg: #6c757d;
@@ -62,15 +66,20 @@
             --button-delete-hover: #c82333;
             --button-edit-bg: #007bff;
             --button-edit-hover: #0056b3;
-            --total-color: #333;
+            --total-bg: #e7f3ff;
+            --total-color: #007bff;
+            --remaining-bg: #e6ffed;
             --remaining-color: #28a745;
+            --remaining-negative-bg: #ffe6e6;
             --remaining-negative-color: #dc3545;
-            --shadow-color: rgba(0, 0, 0, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
         }
 
         [data-theme="dark"] {
-            --background-color: #000;
-            --container-background: #1a1a1a;
+            --background-color: #121212;
+            --container-background: #1e1e1e;
             --text-color: #e0e0e0;
             --border-color: #444;
             --table-header-bg: #2c2c2c;
@@ -82,55 +91,65 @@
             --button-delete-hover: #c0392b;
             --button-edit-bg: #3498db;
             --button-edit-hover: #2980b9;
-            --total-color: #e0e0e0;
+            --total-bg: #1a2634;
+            --total-color: #66b0ff;
+            --remaining-bg: #1a2e24;
             --remaining-color: #2ecc71;
+            --remaining-negative-bg: #2e1a1a;
             --remaining-negative-color: #e74c3c;
             --shadow-color: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
         }
 
         body {
-            font-family: Arial, sans-serif;
-            margin sijait: 0;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
             padding: 20px;
             background-color: var(--background-color);
             color: var(--text-color);
-            transition: background-color 0.3s, color 0.3s;
+            transition: var(--transition);
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: var(--container-background);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px var(--shadow-color);
-            transition: background-color 0.3s;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
             position: relative;
         }
         .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
         }
-        h1 {
-            color: var(--text-color);
-            margin: 0;
+        .header h1 {
             font-size: 1.8em;
-        }
-        .menu-button {
-            background: var(--container-background);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 8px;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+            margin: 0;
+        }
+        .header h1 i {
+            color: var(--button-add-bg);
+        }
+        .menu-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            transition: var(--transition);
         }
         .menu-button i {
             font-size: 24px;
             color: var(--text-color);
+        }
+        .menu-button:hover i {
+            color: var(--button-add-bg);
         }
         .settings-menu {
             display: none;
@@ -139,10 +158,11 @@
             right: 20px;
             background: var(--container-background);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            box-shadow: 0 2px 5px var(--shadow-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
             padding: 10px;
             z-index: 1000;
+            min-width: 200px;
         }
         .settings-menu.active {
             display: block;
@@ -153,188 +173,246 @@
             padding: 0;
         }
         .settings-menu li {
-            padding: 10px;
+            padding: 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             color: var(--text-color);
+            font-size: 0.95em;
+        }
+        .settings-menu li i {
+            margin-right: 8px;
+            color: var(--button-add-bg);
         }
         .settings-menu input[type="number"] {
             width: 50px;
-            padding: 5px;
+            padding: 6px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             background-color: var(--container-background);
             color: var(--text-color);
-        }
-        .toggle-switch {
-            position: relative;
-            width: 40px;
-            height: 20px;
-            background-color: #ccc;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .toggle-switch input {
-            display: none;
-        }
-        .toggle-switch .slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            background-color: #fff;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-        .toggle-switch input:checked + .slider {
-            transform: translateX(20px);
-        }
-        .toggle-switch input:checked ~ .toggle-switch {
-            background-color: var(--button-add-bg);
+            font-family: 'Poppins', sans-serif;
         }
         .month-selector {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .month-selector label {
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 0.95em;
         }
         .month-selector select {
-            padding: 10px;
+            padding: 10px 15px;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 6px;
             background-color: var(--container-background);
             color: var(--text-color);
             cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95em;
+            transition: var(--transition);
+        }
+        .month-selector select:focus {
+            outline: none;
+            border-color: var(--button-add-bg);
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
         }
         .input-section {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            background: var(--container-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
         }
         .input-section .recurring-label {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            font-size: 0.9em;
         }
         .salary-section {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            background: var(--container-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
         }
         .salary-section .salary-value {
             color: var(--remaining-color);
-            font-weight: bold;
+            font-weight: 500;
             margin-left: 10px;
+            font-size: 0.95em;
         }
         .salary-section .salary-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
         .salary-section .salary-options label {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            font-size: 0.9em;
         }
         .input-section input, .input-section button,
         .salary-section input, .salary-section button {
-            padding: 10px;
-            margin: 5px;
+            padding: 10px 15px;
+            margin: 0;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 6px;
             background-color: var(--container-background);
             color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95em;
+            transition: var(--transition);
+        }
+        .input-section input:focus, .salary-section input:focus {
+            outline: none;
+            border-color: var(--button-add-bg);
+            box-shadow: 0 0 5px rgba(40, 167, 69, 0.2);
         }
         .input-section button,
         .salary-section button {
-            background-color: var(--button-add-bg);
+            background: linear-gradient(135deg, var(--button-add-bg), var(--button-add-hover));
             color: #fff;
             border: none;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .input-section button:hover,
         .salary-section button:hover {
-            background-color: var(--button-add-hover);
+            background: var(--button-add-hover);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
         }
         .input-section .cancel-btn {
-            background-color: var(--button-cancel-bg);
+            background: linear-gradient(135deg, var(--button-cancel-bg), var(--button-cancel-hover));
         }
         .input-section .cancel-btn:hover {
-            background-color: var(--button-cancel-hover);
+            background: var(--button-cancel-hover);
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            background: var(--container-background);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
         }
         table, th, td {
-            border: 1px solid var(--border-color);
+            border: none;
         }
         th, td {
-            padding: 10px;
+            padding: 12px 15px;
             text-align: left;
             color: var(--text-color);
+            font-size: 0.9em;
         }
         th {
             background-color: var(--table-header-bg);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+        tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+        tr:last-child {
+            border-bottom: none;
+        }
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        tr:nth-child(even)[data-theme="dark"] {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        tr:hover {
+            background-color: rgba(40, 167, 69, 0.05);
         }
         .delete-btn {
-            background-color: var(--button-delete-bg);
+            background: linear-gradient(135deg, var(--button-delete-bg), var(--button-delete-hover));
             color: #fff;
             border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            margin-right: 5px;
+            margin-right: 6px;
+            transition: var(--transition);
         }
         .delete-btn:hover {
-            background-color: var(--button-delete-hover);
+            background: var(--button-delete-hover);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
         }
         .edit-btn {
-            background-color: var(--button-edit-bg);
+            background: linear-gradient(135deg, var(--button-edit-bg), var(--button-edit-hover));
             color: #fff;
             border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: var(--transition);
         }
         .edit-btn:hover {
-            background-color: var(--button-edit-hover);
+            background: var(--button-edit-hover);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+        .recurring-icon {
+            color: var(--button-add-bg);
+            margin-left: 5px;
+        }
+        .total, .remaining {
+            font-size: 1.1em;
+            font-weight: 500;
+            text-align: right;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: inline-block;
         }
         .total {
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: right;
-            margin-bottom: 10px;
+            background-color: var(--total-bg);
             color: var(--total-color);
         }
         .remaining {
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: right;
-            margin-bottom: 20px;
-            padding: 5px 10px;
-            border-radius: 4px;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--remaining-bg);
             color: var(--remaining-color);
-            display: inline-block;
         }
         .remaining.negative {
+            background-color: var(--remaining-negative-bg);
             color: var(--remaining-negative-color);
+        }
+        .chart-container {
+            background: var(--container-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-top: 25px;
         }
         canvas {
             max-width: 100%;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        tr {
+            animation: fadeIn 0.3s ease;
         }
 
         /* Media Queries para Responsividade */
@@ -345,9 +423,9 @@
             .header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 10px;
+                gap: 12px;
             }
-            h1 {
+            .header h1 {
                 font-size: 1.5em;
             }
             .menu-button {
@@ -360,31 +438,38 @@
             .settings-menu {
                 top: 80px;
                 right: 15px;
+                min-width: 180px;
+            }
+            .settings-menu li {
+                padding: 10px;
+                font-size: 0.9em;
             }
             .month-selector select,
             .input-section input, .input-section button,
             .salary-section input, .salary-section button {
-                padding: 8px;
-                margin: 3px;
+                padding: 8px 12px;
+                font-size: 0.9em;
             }
             .salary-section .salary-options label {
-                font-size: 0.9em;
+                font-size: 0.85em;
             }
             .settings-menu input[type="number"] {
                 padding: 4px;
                 width: 45px;
             }
             th, td {
-                padding: 8px;
+                padding: 10px 12px;
+                font-size: 0.85em;
             }
             .total, .remaining {
-                font-size: 1.1em;
+                font-size: 1em;
+                padding: 8px 12px;
             }
         }
 
         @media (max-width: 400px) {
-            h1 {
-                font-size: 1.2em;
+            .header h1 {
+                font-size: 1.3em;
             }
             .menu-button {
                 padding: 5px;
@@ -395,12 +480,17 @@
             .settings-menu {
                 top: 70px;
                 right: 10px;
+                min-width: 160px;
+            }
+            .settings-menu li {
+                padding: 8px;
+                font-size: 0.85em;
             }
             .month-selector select,
             .input-section input, .input-section button,
             .salary-section input, .salary-section button {
-                padding: 6px;
-                margin: 2px;
+                padding: 6px 10px;
+                font-size: 0.85em;
             }
             .salary-section .salary-options label {
                 font-size: 0.8em;
@@ -410,11 +500,12 @@
                 width: 40px;
             }
             th, td {
-                padding: 6px;
-                font-size: 0.9em;
+                padding: 8px 10px;
+                font-size: 0.8em;
             }
             .total, .remaining {
-                font-size: 1em;
+                font-size: 0.95em;
+                padding: 6px 10px;
             }
         }
     </style>
@@ -422,7 +513,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Controle de Gastos v1.1</h1>
+            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.2</h1>
             <button class="menu-button" onclick="toggleSettingsMenu()">
                 <i class="fas fa-gear"></i>
             </button>
@@ -430,14 +521,14 @@
         <div class="settings-menu" id="settingsMenu">
             <ul>
                 <li>
-                    Modo Escuro
+                    <span><i class="fas fa-moon"></i> Modo Escuro</span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()">
                         <span class="slider"></span>
                     </label>
                 </li>
                 <li>
-                    Dia de Pagamento
+                    <span><i class="fas fa-calendar-day"></i> Dia de Pagamento</span>
                     <input type="number" id="paymentDay" min="1" max="31" value="1" onchange="setPaymentDay()">
                 </li>
             </ul>
@@ -467,8 +558,8 @@
                 <input type="checkbox" id="isRecurring">
                 Recorrente
             </label>
-            <button id="addBtn" onclick="addOrUpdateExpense()">Adicionar Gasto</button>
-            <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;">Cancelar</button>
+            <button id="addBtn" onclick="addOrUpdateExpense()"><i class="fas fa-plus"></i> Adicionar Gasto</button>
+            <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
         </div>
         <div class="salary-section">
             <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
@@ -482,7 +573,7 @@
                     Deste mês em diante
                 </label>
             </div>
-            <button onclick="setSalary()">Definir Salário</button>
+            <button onclick="setSalary()"><i class="fas fa-check"></i> Definir Salário</button>
             <span id="currentSalary" class="salary-value"></span>
         </div>
         <table id="expenseTable">
@@ -498,7 +589,9 @@
         </table>
         <div class="total" id="totalAmount">Total: R$ 0,00</div>
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
-        <canvas id="expenseChart"></canvas>
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -625,7 +718,6 @@
         }
 
         function formatDate(dateString) {
-            // Extrair ano, mês e dia diretamente da string YYYY-MM-DD
             const [year, month, day] = dateString.split('-');
             return `${day}/${month}/${year}`;
         }
@@ -639,10 +731,8 @@
                 const currentMonthIndex = getMonthIndex(currentMonth);
 
                 if (salaryOption === 'current') {
-                    // Apenas este mês
                     monthlyData[currentMonth].salary = salaryValue;
                 } else {
-                    // Deste mês em diante
                     for (let i = currentMonthIndex; i < months.length; i++) {
                         const targetMonth = months[i];
                         monthlyData[targetMonth].salary = salaryValue;
@@ -670,12 +760,12 @@
             expenses.forEach((expense, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${expense.name}</td>
+                    <td>${expense.name}${expense.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
                     <td>${formatCurrency(expense.amount)}</td>
                     <td>${formatDate(expense.date)}</td>
                     <td>
-                        <button class="edit-btn" data-index="${index}">Editar</button>
-                        <button class="delete-btn" data-index="${index}">Excluir</button>
+                        <button class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i> Editar</button>
+                        <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i> Excluir</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -706,8 +796,10 @@
                     datasets: [{
                         data: expenses.map(expense => expense.amount),
                         backgroundColor: [
-                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
-                        ]
+                            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5'
+                        ],
+                        borderColor: document.body.getAttribute('data-theme') === 'dark' ? '#1e1e1e' : '#ffffff',
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -716,7 +808,11 @@
                         legend: {
                             position: 'top',
                             labels: {
-                                color: document.body.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#333'
+                                color: document.body.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2d3436',
+                                font: {
+                                    family: 'Poppins',
+                                    size: 12
+                                }
                             }
                         },
                         tooltip: {
@@ -804,7 +900,6 @@
                 const newExpense = { name, amount, date, isRecurring };
 
                 if (editingIndex !== null) {
-                    // Atualizar gasto existente
                     const oldExpense = expenses[editingIndex];
                     if (oldExpense.isRecurring) {
                         removeRecurringExpenses(oldExpense, getMonthIndex(currentMonth));
@@ -812,7 +907,6 @@
                     expenses[editingIndex] = newExpense;
                     monthlyData[currentMonth].expenses = expenses;
                 } else if (!isRecurring) {
-                    // Adicionar novo gasto não recorrente
                     if (expenseMonth === currentMonth) {
                         expenses.push(newExpense);
                         monthlyData[currentMonth].expenses = expenses;
@@ -830,7 +924,7 @@
                 dateInput.value = '';
                 isRecurringInput.checked = false;
                 if (editingIndex !== null) {
-                    document.getElementById('addBtn').textContent = 'Adicionar Gasto';
+                    document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
                     document.getElementById('cancelBtn').style.display = 'none';
                     editingIndex = null;
                 }
@@ -847,7 +941,7 @@
             document.getElementById('expenseAmount').value = expense.amount.toFixed(2);
             document.getElementById('expenseDate').value = expense.date;
             document.getElementById('isRecurring').checked = expense.isRecurring;
-            document.getElementById('addBtn').textContent = 'Salvar Alterações';
+            document.getElementById('addBtn').innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
             document.getElementById('cancelBtn').style.display = 'inline';
             editingIndex = index;
         }
@@ -857,7 +951,7 @@
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseDate').value = '';
             document.getElementById('isRecurring').checked = false;
-            document.getElementById('addBtn').textContent = 'Adicionar Gasto';
+            document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
             document.getElementById('cancelBtn').style.display = 'none';
             editingIndex = null;
         }
@@ -892,11 +986,11 @@
 
         // Configurar delegação de eventos
         document.getElementById('expenseTable').addEventListener('click', (event) => {
-            const index = parseInt(event.target.getAttribute('data-index'));
+            const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
             if (!isNaN(index)) {
-                if (event.target.classList.contains('edit-btn')) {
+                if (event.target.classList.contains('edit-btn') || event.target.parentElement.classList.contains('edit-btn')) {
                     editExpense(index);
-                } else if (event.target.classList.contains('delete-btn')) {
+                } else if (event.target.classList.contains('delete-btn') || event.target.parentElement.classList.contains('delete-btn')) {
                     deleteExpense(index);
                 }
             }
