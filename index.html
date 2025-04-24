@@ -90,7 +90,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
+            margin sijait: 0;
             padding: 20px;
             background-color: var(--background-color);
             color: var(--text-color);
@@ -236,6 +236,17 @@
             font-weight: bold;
             margin-left: 10px;
         }
+        .salary-section .salary-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .salary-section .salary-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
         .input-section input, .input-section button,
         .salary-section input, .salary-section button {
             padding: 10px;
@@ -356,6 +367,9 @@
                 padding: 8px;
                 margin: 3px;
             }
+            .salary-section .salary-options label {
+                font-size: 0.9em;
+            }
             .settings-menu input[type="number"] {
                 padding: 4px;
                 width: 45px;
@@ -387,6 +401,9 @@
             .salary-section input, .salary-section button {
                 padding: 6px;
                 margin: 2px;
+            }
+            .salary-section .salary-options label {
+                font-size: 0.8em;
             }
             .settings-menu input[type="number"] {
                 padding: 3px;
@@ -455,6 +472,16 @@
         </div>
         <div class="salary-section">
             <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
+            <div class="salary-options">
+                <label>
+                    <input type="radio" name="salaryOption" value="current" checked>
+                    Apenas este mês
+                </label>
+                <label>
+                    <input type="radio" name="salaryOption" value="onward">
+                    Deste mês em diante
+                </label>
+            </div>
             <button onclick="setSalary()">Definir Salário</button>
             <span id="currentSalary" class="salary-value"></span>
         </div>
@@ -600,16 +627,29 @@
         function formatDate(dateString) {
             // Extrair ano, mês e dia diretamente da string YYYY-MM-DD
             const [year, month, day] = dateString.split('-');
-            // month já está no formato 01-12, e day no formato 01-31
             return `${day}/${month}/${year}`;
         }
 
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
+            const salaryOption = document.querySelector('input[name="salaryOption"]:checked').value;
             const salaryValue = parseFloat(salaryInput.value);
+
             if (!isNaN(salaryValue) && salaryValue >= 0) {
+                const currentMonthIndex = getMonthIndex(currentMonth);
+
+                if (salaryOption === 'current') {
+                    // Apenas este mês
+                    monthlyData[currentMonth].salary = salaryValue;
+                } else {
+                    // Deste mês em diante
+                    for (let i = currentMonthIndex; i < months.length; i++) {
+                        const targetMonth = months[i];
+                        monthlyData[targetMonth].salary = salaryValue;
+                    }
+                }
+
                 salary = salaryValue;
-                monthlyData[currentMonth].salary = salary;
                 saveMonthlyData();
                 salaryInput.value = '';
                 updateSalaryDisplay();
@@ -792,7 +832,7 @@
                 if (editingIndex !== null) {
                     document.getElementById('addBtn').textContent = 'Adicionar Gasto';
                     document.getElementById('cancelBtn').style.display = 'none';
-                    editingIndexleted = null;
+                    editingIndex = null;
                 }
                 saveMonthlyData();
                 loadMonthData();
