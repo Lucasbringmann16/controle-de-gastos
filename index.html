@@ -236,10 +236,6 @@
             gap: 6px;
             font-size: 0.9em;
         }
-        .input-section .date-label {
-            font-size: 0.9em;
-            font-weight: 500;
-        }
         .salary-section {
             margin-bottom: 25px;
             display: flex;
@@ -557,7 +553,6 @@
         <div class="input-section">
             <input type="text" id="expenseName" placeholder="Nome do gasto">
             <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
-            <label for="expenseDate" class="date-label">Selecionar data:</label>
             <input type="date" id="expenseDate" required>
             <label class="recurring-label">
                 <input type="checkbox" id="isRecurring">
@@ -808,7 +803,7 @@
                     }]
                 },
                 options: {
-                    responsive: true;
+                    responsive: true,
                     plugins: {
                         legend: {
                             position: 'top',
