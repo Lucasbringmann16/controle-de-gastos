@@ -264,6 +264,18 @@
             margin-left: 10px;
             font-size: 0.95em;
         }
+        .salary-section .salary-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .salary-section .salary-options label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
         .input-section input, .input-section button,
         .salary-section input, .salary-section button {
             padding: 10px 15px;
@@ -455,6 +467,9 @@
             .type-selector label {
                 font-size: 0.85em;
             }
+            .salary-section .salary-options label {
+                font-size: 0.85em;
+            }
             .settings-menu input[type="number"] {
                 padding: 4px;
                 width: 45px;
@@ -498,6 +513,9 @@
                 gap: 8px;
             }
             .type-selector label {
+                font-size: 0.8em;
+            }
+            .salary-section .salary-options label {
                 font-size: 0.8em;
             }
             .settings-menu input[type="number"] {
@@ -578,6 +596,16 @@
         </div>
         <div class="salary-section">
             <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
+            <div class="salary-options">
+                <label>
+                    <input type="radio" name="salaryOption" value="current" checked>
+                    Apenas este mês
+                </label>
+                <label>
+                    <input type="radio" name="salaryOption" value="onward">
+                    Deste mês em diante
+                </label>
+            </div>
             <button onclick="setSalary()"><i class="fas fa-check"></i> Definir Salário</button>
             <span id="currentSalary" class="salary-value"></span>
         </div>
@@ -738,15 +766,19 @@
 
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
+            const salaryOption = document.querySelector('input[name="salaryOption"]:checked').value;
             const salaryValue = parseFloat(salaryInput.value);
 
             if (!isNaN(salaryValue) && salaryValue >= 0) {
                 const currentMonthIndex = getMonthIndex(currentMonth);
 
-                // Aplicar o salário a partir do mês atual em diante
-                for (let i = currentMonthIndex; i < months.length; i++) {
-                    const targetMonth = months[i];
-                    monthlyData[targetMonth].salary = salaryValue;
+                if (salaryOption === 'current') {
+                    monthlyData[currentMonth].salary = salaryValue;
+                } else {
+                    for (let i = currentMonthIndex; i < months.length; i++) {
+                        const targetMonth = months[i];
+                        monthlyData[targetMonth].salary = salaryValue;
+                    }
                 }
 
                 salary = salaryValue;
@@ -822,7 +854,7 @@
                     }]
                 },
                 options: {
-                    responsive: true;
+                    responsive: true,
                     plugins: {
                         legend: {
                             position: 'top',
