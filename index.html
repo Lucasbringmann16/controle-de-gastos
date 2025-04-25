@@ -37,45 +37,6 @@
         }
         return gk_fileData[filename] || "";
         }
-        </script><script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
         </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -593,13 +554,6 @@
                     <span><i class="fas fa-calendar-day"></i> Dia de Pagamento</span>
                     <input type="number" id="paymentDay" min="1" max="31" value="1" onchange="setPaymentDay()">
                 </li>
-                <li>
-                    <span><i class="fas fa-money-bill-wave"></i> Definir Salário</span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="number" id="salaryAmount" placeholder="R$" step="0.01" style="width: 80px;">
-                        <button onclick="setSalary()" style="padding: 6px 12px;"><i class="fas fa-check"></i></button>
-                    </div>
-                </li>
             </ul>
         </div>
         <div class="month-selector">
@@ -639,6 +593,21 @@
             </label>
             <button id="addBtn" onclick="addOrUpdateEntry()"><i class="fas fa-plus"></i> Adicionar</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
+        </div>
+        <div class="salary-section">
+            <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
+            <div class="salary-options">
+                <label>
+                    <input type="radio" name="salaryOption" value="current" checked>
+                    Apenas este mês
+                </label>
+                <label>
+                    <input type="radio" name="salaryOption" value="onward">
+                    Deste mês em diante
+                </label>
+            </div>
+            <button onclick="setSalary()"><i class="fas fa-check"></i> Definir Salário</button>
+            <span id="currentSalary" class="salary-value"></span>
         </div>
         <table id="entryTable">
             <thead>
@@ -797,15 +766,19 @@
 
         function setSalary() {
             const salaryInput = document.getElementById('salaryAmount');
+            const salaryOption = document.querySelector('input[name="salaryOption"]:checked').value;
             const salaryValue = parseFloat(salaryInput.value);
 
             if (!isNaN(salaryValue) && salaryValue >= 0) {
                 const currentMonthIndex = getMonthIndex(currentMonth);
 
-                // Aplica o salário do mês atual em diante
-                for (let i = currentMonthIndex; i < months.length; i++) {
-                    const targetMonth = months[i];
-                    monthlyData[targetMonth].salary = salaryValue;
+                if (salaryOption === 'current') {
+                    monthlyData[currentMonth].salary = salaryValue;
+                } else {
+                    for (let i = currentMonthIndex; i < months.length; i++) {
+                        const targetMonth = months[i];
+                        monthlyData[targetMonth].salary = salaryValue;
+                    }
                 }
 
                 salary = salaryValue;
@@ -1113,5 +1086,5 @@
         toggleRecurringOption();
         loadMonthData();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9360cf07881bbd37',t:'MTc0NTYxNTIzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
