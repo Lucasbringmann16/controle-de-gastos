@@ -287,28 +287,21 @@
             font-size: 0.9em;
         }
         .salary-section {
-            margin-bottom: 25px;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            gap: 12px;
-            background: var(--container-background);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
+            gap: 8px;
         }
         .salary-section .salary-value {
             color: var(--remaining-color);
             font-weight: 500;
-            margin-left: 10px;
             font-size: 0.95em;
         }
         .input-section input, .input-section button,
         .salary-section input, .salary-section button {
-            padding: 10px 15px;
+            padding: 6px 12px;
             margin: 0;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 4px;
             background-color: var(--container-background);
             color: var(--text-color);
             font-family: 'Poppins', sans-serif;
@@ -483,8 +476,7 @@
                 font-size: 0.9em;
             }
             .month-selector select,
-            .input-section input, .input-section button,
-            .salary-section input, .salary-section button {
+            .input-section input, .input-section button {
                 padding: 8px 12px;
                 font-size: 0.9em;
             }
@@ -494,9 +486,14 @@
             .type-selector label {
                 font-size: 0.85em;
             }
-            .settings-menu input[type="number"] {
-                padding: 4px;
-                width: 45px;
+            .settings-menu input[type="number"],
+            .salary-section input,
+            .salary-section button {
+                padding: 4px 8px;
+                font-size: 0.9em;
+            }
+            .salary-section input {
+                width: 80px;
             }
             th, td {
                 padding: 10px 12px;
@@ -528,8 +525,7 @@
                 font-size: 0.85em;
             }
             .month-selector select,
-            .input-section input, .input-section button,
-            .salary-section input, .salary-section button {
+            .input-section input, .input-section button {
                 padding: 6px 10px;
                 font-size: 0.85em;
             }
@@ -539,9 +535,14 @@
             .type-selector label {
                 font-size: 0.8em;
             }
-            .settings-menu input[type="number"] {
-                padding: 3px;
-                width: 40px;
+            .settings-menu input[type="number"],
+            .salary-section input,
+            .salary-section button {
+                padding: 3px 6px;
+                font-size: 0.85em;
+            }
+            .salary-section input {
+                width: 70px;
             }
             th, td {
                 padding: 8px 10px;
@@ -574,6 +575,14 @@
                 <li>
                     <span><i class="fas fa-calendar-day"></i> Dia de Pagamento</span>
                     <input type="number" id="paymentDay" min="1" max="31" value="1" onchange="setPaymentDay()">
+                </li>
+                <li>
+                    <span><i class="fas fa-money-bill-wave"></i> Definir Salário</span>
+                    <div class="salary-section">
+                        <input type="number" id="salaryAmount" placeholder="R$" step="0.01">
+                        <button onclick="setSalary()"><i class="fas fa-check"></i></button>
+                        <span id="currentSalary" class="salary-value"></span>
+                    </div>
                 </li>
             </ul>
         </div>
@@ -614,11 +623,6 @@
             </label>
             <button id="addBtn" onclick="addOrUpdateEntry()"><i class="fas fa-plus"></i> Adicionar</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
-        </div>
-        <div class="salary-section">
-            <input type="number" id="salaryAmount" placeholder="Seu salário (R$)" step="0.01">
-            <button onclick="setSalary()"><i class="fas fa-check"></i> Definir Salário</button>
-            <span id="currentSalary" class="salary-value"></span>
         </div>
         <table id="entryTable">
             <thead>
