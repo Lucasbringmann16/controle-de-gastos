@@ -236,6 +236,17 @@
             gap: 6px;
             font-size: 0.9em;
         }
+        .type-selector {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .type-selector label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
         .salary-section {
             margin-bottom: 25px;
             display: flex;
@@ -450,6 +461,12 @@
                 padding: 8px 12px;
                 font-size: 0.9em;
             }
+            .type-selector {
+                gap: 10px;
+            }
+            .type-selector label {
+                font-size: 0.85em;
+            }
             .salary-section .salary-options label {
                 font-size: 0.85em;
             }
@@ -491,6 +508,12 @@
             .salary-section input, .salary-section button {
                 padding: 6px 10px;
                 font-size: 0.85em;
+            }
+            .type-selector {
+                gap: 8px;
+            }
+            .type-selector label {
+                font-size: 0.8em;
             }
             .salary-section .salary-options label {
                 font-size: 0.8em;
@@ -551,14 +574,24 @@
             </select>
         </div>
         <div class="input-section">
-            <input type="text" id="expenseName" placeholder="Nome do gasto">
-            <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
-            <input type="date" id="expenseDate" required>
-            <label class="recurring-label">
+            <input type="text" id="entryName" placeholder="Nome">
+            <input type="number" id="entryAmount" placeholder="Valor (R$)" step="0.01">
+            <input type="date" id="entryDate" required>
+            <div class="type-selector">
+                <label>
+                    <input type="radio" name="entryType" value="expense" checked>
+                    Gasto
+                </label>
+                <label>
+                    <input type="radio" name="entryType" value="income">
+                    Renda
+                </label>
+            </div>
+            <label class="recurring-label" id="recurringOption">
                 <input type="checkbox" id="isRecurring">
                 Recorrente
             </label>
-            <button id="addBtn" onclick="addOrUpdateExpense()"><i class="fas fa-plus"></i> Adicionar Gasto</button>
+            <button id="addBtn" onclick="addOrUpdateEntry()"><i class="fas fa-plus"></i> Adicionar</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
         </div>
         <div class="salary-section">
@@ -576,21 +609,22 @@
             <button onclick="setSalary()"><i class="fas fa-check"></i> Definir Salário</button>
             <span id="currentSalary" class="salary-value"></span>
         </div>
-        <table id="expenseTable">
+        <table id="entryTable">
             <thead>
                 <tr>
                     <th>Descrição</th>
                     <th>Valor (R$)</th>
+                    <th>Tipo</th>
                     <th>Data de Pagamento</th>
                     <th>Ação</th>
                 </tr>
             </thead>
-            <tbody id="expenseTableBody"></tbody>
+            <tbody id="entryTableBody"></tbody>
         </table>
-        <div class="total" id="totalAmount">Total: R$ 0,00</div>
+        <div class="total" id="totalAmount">Total de Gastos: R$ 0,00</div>
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
         <div class="chart-container">
-            <canvas id="expenseChart"></canvas>
+            <canvas id="entryChart"></canvas>
         </div>
     </div>
 
@@ -605,7 +639,7 @@
         // Carregar dados do localStorage ou iniciar com objeto vazio
         let monthlyData = JSON.parse(localStorage.getItem('monthlyData')) || {};
         let currentMonth = getCurrentMonth();
-        let expenses = [];
+        let entries = [];
         let salary = 0;
         let chart;
         let editingIndex = null;
@@ -628,7 +662,14 @@
         function initializeMonthlyData() {
             months.forEach(month => {
                 if (!monthlyData[month]) {
-                    monthlyData[month] = { expenses: [], salary: 0 };
+                    monthlyData[month] = { entries: [], salary: 0 };
+                } else if (monthlyData[month].expenses) {
+                    // Migrar dados antigos
+                    monthlyData[month].entries = monthlyData[month].expenses.map(expense => ({
+                        ...expense,
+                        type: 'expense'
+                    }));
+                    delete monthlyData[month].expenses;
                 }
             });
             saveMonthlyData();
@@ -643,7 +684,7 @@
         function loadMonthData() {
             const month = document.getElementById('monthSelect').value;
             currentMonth = month;
-            expenses = monthlyData[month].expenses || [];
+            entries = monthlyData[month].entries || [];
             salary = monthlyData[month].salary || 0;
             updateTable();
             updateSalaryDisplay();
@@ -756,14 +797,16 @@
         }
 
         function updateTable() {
-            const tableBody = document.getElementById('expenseTableBody');
+            const tableBody = document.getElementById('entryTableBody');
             tableBody.innerHTML = '';
-            expenses.forEach((expense, index) => {
+            entries.forEach((entry, index) => {
                 const row = document.createElement('tr');
+                const valueColor = entry.type === 'income' ? 'var(--remaining-color)' : 'var(--remaining-negative-color)';
                 row.innerHTML = `
-                    <td>${expense.name}${expense.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
-                    <td>${formatCurrency(expense.amount)}</td>
-                    <td>${formatDate(expense.date)}</td>
+                    <td>${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
+                    <td style="color: ${valueColor}">${formatCurrency(entry.amount)}</td>
+                    <td>${entry.type === 'expense' ? 'Gasto' : 'Renda'}</td>
+                    <td>${formatDate(entry.date)}</td>
                     <td>
                         <button class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i> Editar</button>
                         <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i> Excluir</button>
@@ -774,30 +817,35 @@
         }
 
         function updateTotal() {
-            const total = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
-            document.getElementById('totalAmount').textContent = `Total: ${formatCurrency(total)}`;
-            return total;
+            const totalExpenses = entries
+                .filter(entry => entry.type === 'expense')
+                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+            document.getElementById('totalAmount').textContent = `Total de Gastos: ${formatCurrency(totalExpenses)}`;
+            return totalExpenses;
         }
 
         function updateRemaining() {
-            const total = updateTotal();
-            const remaining = salary - total;
+            const totalExpenses = updateTotal();
+            const totalIncome = entries
+                .filter(entry => entry.type === 'income')
+                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0, 0);
+            const totalBudget = salary + totalIncome;
+            const remaining = totalBudget - totalExpenses;
             const remainingElement = document.getElementById('remainingAmount');
             remainingElement.textContent = `Restante: ${formatCurrency(remaining)}`;
             remainingElement.classList.toggle('negative', remaining < 0);
         }
 
         function updateChart() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const ctx = document.getElementById('entryChart').getContext('2d');
             const isDarkTheme = document.body.getAttribute('data-theme') === 'dark';
-            
             if (chart) chart.destroy();
             chart = new Chart(ctx, {
                 type: 'pie',
                 data: {
-                    labels: expenses.map(expense => expense.name),
+                    labels: entries.filter(entry => entry.type === 'expense').map(entry => entry.name),
                     datasets: [{
-                        data: expenses.map(expense => expense.amount),
+                        data: entries.filter(entry => entry.type === 'expense').map(entry => entry.amount),
                         backgroundColor: isDarkTheme
                             ? ['#4CAF50', '#29B6F6', '#F44336', '#78909C', '#FFB300', '#CE93D8']
                             : ['#66BB6A', '#42A5F5', '#EF5350', '#90A4AE', '#FFCA28', '#AB47BC'],
@@ -838,8 +886,8 @@
             return new Date(year, month + 1, 0).getDate();
         }
 
-        function addRecurringExpenses(expense, startMonthIndex) {
-            const [year, month, day] = expense.date.split('-');
+        function addRecurringEntries(entry, startMonthIndex) {
+            const [year, month, day] = entry.date.split('-');
             const parsedYear = parseInt(year);
             const parsedDay = parseInt(day);
 
@@ -849,35 +897,36 @@
                 const targetDay = Math.min(parsedDay, lastDay);
                 const targetDate = `${parsedYear}-${String(i + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
 
-                const newExpense = {
-                    name: expense.name,
-                    amount: expense.amount,
+                const newEntry = {
+                    name: entry.name,
+                    amount: entry.amount,
                     date: targetDate,
-                    isRecurring: true
+                    isRecurring: true,
+                    type: 'expense'
                 };
 
                 if (i === startMonthIndex && editingIndex !== null) {
-                    monthlyData[targetMonth].expenses[editingIndex] = newExpense;
+                    monthlyData[targetMonth].entries[editingIndex] = newEntry;
                 } else {
-                    monthlyData[targetMonth].expenses.push(newExpense);
+                    monthlyData[targetMonth].entries.push(newEntry);
                 }
             }
             saveMonthlyData();
         }
 
-        function removeRecurringExpenses(expense, startMonthIndex, removeAll = false) {
-            const [year] = expense.date.split('-');
+        function removeRecurringEntries(entry, startMonthIndex, removeAll = false) {
+            const [year] = entry.date.split('-');
             const parsedYear = parseInt(year);
-            const expenseName = expense.name;
-            const expenseAmount = expense.amount;
+            const entryName = entry.name;
+            const entryAmount = entry.amount;
 
             for (let i = startMonthIndex; i < months.length; i++) {
                 const targetMonth = months[i];
-                const expensesInMonth = monthlyData[targetMonth].expenses;
-                monthlyData[targetMonth].expenses = expensesInMonth.filter(exp => {
-                    const [expYear] = exp.date.split('-');
-                    const isSameExpense = exp.name === expenseName && exp.amount === expenseAmount && exp.isRecurring;
-                    if (!isSameExpense) return true;
+                const entriesInMonth = monthlyData[targetMonth].entries;
+                monthlyData[targetMonth].entries = entriesInMonth.filter(ent => {
+                    const [entYear] = ent.date.split('-');
+                    const isSameEntry = ent.name === entryName && ent.amount === entryAmount && ent.isRecurring && ent.type === 'expense';
+                    if (!isSameEntry) return true;
                     if (removeAll) return false;
                     return i < startMonthIndex;
                 });
@@ -885,98 +934,114 @@
             saveMonthlyData();
         }
 
-        function addOrUpdateExpense() {
-            const nameInput = document.getElementById('expenseName');
-            const amountInput = document.getElementById('expenseAmount');
-            const dateInput = document.getElementById('expenseDate');
+        function toggleRecurringOption() {
+            const type = document.querySelector('input[name="entryType"]:checked').value;
+            const recurringOption = document.getElementById('recurringOption');
+            recurringOption.style.display = type === 'expense' ? 'block' : 'none';
+            if (type === 'income') {
+                document.getElementById('isRecurring').checked = false;
+            }
+        }
+
+        function addOrUpdateEntry() {
+            const nameInput = document.getElementById('entryName');
+            const amountInput = document.getElementById('entryAmount');
+            const dateInput = document.getElementById('entryDate');
+            const type = document.querySelector('input[name="entryType"]:checked').value;
             const isRecurringInput = document.getElementById('isRecurring');
             const name = nameInput.value.trim();
             const amount = parseFloat(amountInput.value);
             const date = dateInput.value;
-            const isRecurring = isRecurringInput.checked;
+            const isRecurring = type === 'expense' ? isRecurringInput.checked : false;
 
             if (name && !isNaN(amount) && amount > 0 && date) {
                 const [year, month] = date.split('-');
-                const expenseMonth = months[parseInt(month) - 1];
-                const startMonthIndex = getMonthIndex(expenseMonth);
+                const entryMonth = months[parseInt(month) - 1];
+                const startMonthIndex = getMonthIndex(entryMonth);
 
-                const newExpense = { name, amount, date, isRecurring };
+                const newEntry = { name, amount, date, isRecurring, type };
 
                 if (editingIndex !== null) {
-                    const oldExpense = expenses[editingIndex];
-                    if (oldExpense.isRecurring) {
-                        removeRecurringExpenses(oldExpense, getMonthIndex(currentMonth));
+                    const oldEntry = entries[editingIndex];
+                    if (oldEntry.isRecurring && oldEntry.type === 'expense') {
+                        removeRecurringEntries(oldEntry, getMonthIndex(currentMonth));
                     }
-                    expenses[editingIndex] = newExpense;
-                    monthlyData[currentMonth].expenses = expenses;
-                } else if (!isRecurring) {
-                    if (expenseMonth === currentMonth) {
-                        expenses.push(newExpense);
-                        monthlyData[currentMonth].expenses = expenses;
+                    entries[editingIndex] = newEntry;
+                    monthlyData[currentMonth].entries = entries;
+                } else if (!isRecurring || type === 'income') {
+                    if (entryMonth === currentMonth) {
+                        entries.push(newEntry);
+                        monthlyData[currentMonth].entries = entries;
                     } else {
-                        monthlyData[expenseMonth].expenses.push(newExpense);
+                        monthlyData[entryMonth].entries.push(newEntry);
                     }
                 }
 
-                if (isRecurring) {
-                    addRecurringExpenses(newExpense, startMonthIndex);
+                if (isRecurring && type === 'expense') {
+                    addRecurringEntries(newEntry, startMonthIndex);
                 }
 
                 nameInput.value = '';
                 amountInput.value = '';
                 dateInput.value = '';
                 isRecurringInput.checked = false;
+                document.querySelector('input[name="entryType"][value="expense"]').checked = true;
+                toggleRecurringOption();
                 if (editingIndex !== null) {
-                    document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
+                    document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar';
                     document.getElementById('cancelBtn').style.display = 'none';
                     editingIndex = null;
                 }
                 saveMonthlyData();
                 loadMonthData();
             } else {
-                alert('Por favor, preencha todos os campos corretamente: nome, valor positivo e data de pagamento.');
+                alert('Por favor, preencha todos os campos corretamente: nome, valor positivo e data.');
             }
         }
 
-        function editExpense(index) {
-            const expense = expenses[index];
-            document.getElementById('expenseName').value = expense.name;
-            document.getElementById('expenseAmount').value = expense.amount.toFixed(2);
-            document.getElementById('expenseDate').value = expense.date;
-            document.getElementById('isRecurring').checked = expense.isRecurring;
+        function editEntry(index) {
+            const entry = entries[index];
+            document.getElementById('entryName').value = entry.name;
+            document.getElementById('entryAmount').value = entry.amount.toFixed(2);
+            document.getElementById('entryDate').value = entry.date;
+            document.getElementById('isRecurring').checked = entry.isRecurring;
+            document.querySelector(`input[name="entryType"][value="${entry.type}"]`).checked = true;
+            toggleRecurringOption();
             document.getElementById('addBtn').innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
             document.getElementById('cancelBtn').style.display = 'inline';
             editingIndex = index;
         }
 
         function cancelEdit() {
-            document.getElementById('expenseName').value = '';
-            document.getElementById('expenseAmount').value = '';
-            document.getElementById('expenseDate').value = '';
+            document.getElementById('entryName').value = '';
+            document.getElementById('entryAmount').value = '';
+            document.getElementById('entryDate').value = '';
             document.getElementById('isRecurring').checked = false;
-            document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar Gasto';
+            document.querySelector('input[name="entryType"][value="expense"]').checked = true;
+            toggleRecurringOption();
+            document.getElementById('addBtn').innerHTML = '<i class="fas fa-plus"></i> Adicionar';
             document.getElementById('cancelBtn').style.display = 'none';
             editingIndex = null;
         }
 
-        function deleteExpense(index) {
-            const expense = expenses[index];
-            let confirmMessage = 'Tem certeza que deseja excluir este gasto?';
+        function deleteEntry(index) {
+            const entry = entries[index];
+            let confirmMessage = `Tem certeza que deseja excluir esta ${entry.type === 'expense' ? 'gasto' : 'renda'}?`;
             let removeAll = false;
 
-            if (expense.isRecurring) {
+            if (entry.isRecurring && entry.type === 'expense') {
                 const choice = confirm('Este é um gasto recorrente. Deseja excluir apenas neste mês ou em todos os meses futuros?\n\n- OK: Excluir apenas neste mês\n- Cancelar: Excluir em todos os meses futuros');
                 removeAll = !choice;
                 confirmMessage = removeAll ? 'Excluir este gasto em todos os meses futuros?' : 'Excluir este gasto apenas neste mês?';
             }
 
             if (confirm(confirmMessage)) {
-                if (expense.isRecurring) {
+                if (entry.isRecurring && entry.type === 'expense') {
                     const startMonthIndex = getMonthIndex(currentMonth);
-                    removeRecurringExpenses(expense, startMonthIndex, removeAll);
+                    removeRecurringEntries(entry, startMonthIndex, removeAll);
                 } else {
-                    expenses.splice(index, 1);
-                    monthlyData[currentMonth].expenses = expenses;
+                    entries.splice(index, 1);
+                    monthlyData[currentMonth].entries = entries;
                     saveMonthlyData();
                 }
                 loadMonthData();
@@ -988,13 +1053,13 @@
         }
 
         // Configurar delegação de eventos
-        document.getElementById('expenseTable').addEventListener('click', (event) => {
+        document.getElementById('entryTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
             if (!isNaN(index)) {
                 if (event.target.classList.contains('edit-btn') || event.target.parentElement.classList.contains('edit-btn')) {
-                    editExpense(index);
+                    editEntry(index);
                 } else if (event.target.classList.contains('delete-btn') || event.target.parentElement.classList.contains('delete-btn')) {
-                    deleteExpense(index);
+                    deleteEntry(index);
                 }
             }
         });
@@ -1008,11 +1073,17 @@
             }
         });
 
+        // Controlar visibilidade do checkbox "Recorrente"
+        document.querySelectorAll('input[name="entryType"]').forEach(radio => {
+            radio.addEventListener('change', toggleRecurringOption);
+        });
+
         // Inicializar a página
         initializeMonthlyData();
         setDefaultMonth();
         loadTheme();
         loadPaymentDay();
+        toggleRecurringOption();
         loadMonthData();
     </script>
 </body>
