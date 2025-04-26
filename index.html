@@ -335,17 +335,13 @@
             background: var(--button-cancel-hover);
             box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
         }
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-bottom: 25px;
-            padding: 0 5px; /* Pequeno padding para evitar colar nas bordas */
-        }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 25px;
             background: var(--container-background);
             border-radius: 8px;
+            overflow: hidden;
             box-shadow: var(--card-shadow);
         }
         table, th, td {
@@ -499,12 +495,8 @@
             .salary-section input {
                 width: 80px;
             }
-            .table-container {
-                padding: 0 3px;
-                margin-bottom: 20px;
-            }
             th, td {
-                padding: 8px 10px;
+                padding: 10px 12px;
                 font-size: 0.85em;
             }
             .total, .remaining {
@@ -552,12 +544,8 @@
             .salary-section input {
                 width: 70px;
             }
-            .table-container {
-                padding: 0 2px;
-                margin-bottom: 15px;
-            }
             th, td {
-                padding: 6px 8px;
+                padding: 8px 10px;
                 font-size: 0.8em;
             }
             .total, .remaining {
@@ -636,20 +624,18 @@
             <button id="addBtn" onclick="addOrUpdateEntry()"><i class="fas fa-plus"></i> Adicionar</button>
             <button id="cancelBtn" class="cancel-btn" onclick="cancelEdit()" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
         </div>
-        <div class="table-container">
-            <table id="entryTable">
-                <thead>
-                    <tr>
-                        <th>Descrição</th>
-                        <th>Valor (R$)</th>
-                        <th>Tipo</th>
-                        <th>Data de Pagamento</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="entryTableBody"></tbody>
-            </table>
-        </div>
+        <table id="entryTable">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Valor (R$)</th>
+                    <th>Tipo</th>
+                    <th>Data de Pagamento</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="entryTableBody"></tbody>
+        </table>
         <div class="total" id="totalAmount">Total de Gastos: R$ 0,00</div>
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
         <div class="chart-container">
@@ -879,7 +865,7 @@
                     }]
                 },
                 options: {
-                    responsive: true;
+                    responsive: true,
                     plugins: {
                         legend: {
                             position: 'top',
