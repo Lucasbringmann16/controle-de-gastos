@@ -1021,7 +1021,7 @@
                     amount: entry.amount,
                     date: targetDate,
                     isRecurring: true,
-                    type: 'expense'
+                    type: entry.type // Manter o tipo original (pode ser "expense" ou "income")
                 };
 
                 if (i === startMonthIndex && editingIndex !== null) {
@@ -1038,13 +1038,14 @@
             const parsedYear = parseInt(year);
             const entryName = entry.name;
             const entryAmount = entry.amount;
+            const entryType = entry.type; // Capturar o tipo da entrada (expense ou income)
 
             for (let i = startMonthIndex; i < months.length; i++) {
                 const targetMonth = months[i];
                 const entriesInMonth = monthlyData[targetMonth].entries;
                 monthlyData[targetMonth].entries = entriesInMonth.filter(ent => {
                     const [entYear] = ent.date.split('-');
-                    const isSameEntry = ent.name === entryName && ent.amount === entryAmount && ent.isRecurring && ent.type === 'expense';
+                    const isSameEntry = ent.name === entryName && ent.amount === entryAmount && ent.isRecurring && ent.type === entryType;
                     if (!isSameEntry) return true;
                     if (removeAll) return false;
                     return i < startMonthIndex;
@@ -1054,12 +1055,9 @@
         }
 
         function toggleRecurringOption() {
-            const type = document.querySelector('input[name="entryType"]:checked').value;
+            // A opção "Recorrente" agora está sempre visível, para ambos os tipos (Gasto e Renda)
             const recurringOption = document.getElementById('recurringOption');
-            recurringOption.style.display = type === 'expense' ? 'block' : 'none';
-            if (type === 'income') {
-                document.getElementById('isRecurring').checked = false;
-            }
+            recurringOption.style.display = 'block';
         }
 
         function addOrUpdateEntry() {
@@ -1071,7 +1069,7 @@
             const name = nameInput.value.trim();
             const amount = parseFloat(amountInput.value);
             const date = dateInput.value;
-            const isRecurring = type === 'expense' ? isRecurringInput.checked : false;
+            const isRecurring = isRecurringInput.checked; // Agora aplica tanto para "expense" quanto para "income"
 
             if (name && !isNaN(amount) && amount > 0 && date) {
                 const [year, month] = date.split('-');
@@ -1082,12 +1080,12 @@
 
                 if (editingIndex !== null) {
                     const oldEntry = entries[editingIndex];
-                    if (oldEntry.isRecurring && oldEntry.type === 'expense') {
+                    if (oldEntry.isRecurring) { // Verificar se a entrada antiga era recorrente (qualquer tipo)
                         removeRecurringEntries(oldEntry, getMonthIndex(currentMonth));
                     }
                     entries[editingIndex] = newEntry;
                     monthlyData[currentMonth].entries = entries;
-                } else if (!isRecurring || type === 'income') {
+                } else if (!isRecurring) { // Se não for recorrente, adicionar apenas ao mês especificado
                     if (entryMonth === currentMonth) {
                         entries.push(newEntry);
                         monthlyData[currentMonth].entries = entries;
@@ -1096,7 +1094,7 @@
                     }
                 }
 
-                if (isRecurring && type === 'expense') {
+                if (isRecurring) { // Adicionar aos meses futuros se for recorrente (qualquer tipo)
                     addRecurringEntries(newEntry, startMonthIndex);
                 }
 
@@ -1148,14 +1146,14 @@
             let confirmMessage = `Tem certeza que deseja excluir esta ${entry.type === 'expense' ? 'gasto' : 'renda'}?`;
             let removeAll = false;
 
-            if (entry.isRecurring && entry.type === 'expense') {
-                const choice = confirm('Este é um gasto recorrente. Deseja excluir apenas neste mês ou em todos os meses futuros?\n\n- OK: Excluir apenas neste mês\n- Cancelar: Excluir em todos os meses futuros');
+            if (entry.isRecurring) { // Verificar apenas se é recorrente, independentemente do tipo
+                const choice = confirm(`Esta é uma ${entry.type === 'expense' ? 'gasto' : 'renda'} recorrente. Deseja excluir apenas neste mês ou em todos os meses futuros?\n\n- OK: Excluir apenas neste mês\n- Cancelar: Excluir em todos os meses futuros`);
                 removeAll = !choice;
-                confirmMessage = removeAll ? 'Excluir este gasto em todos os meses futuros?' : 'Excluir este gasto apenas neste mês?';
+                confirmMessage = removeAll ? `Excluir esta ${entry.type === 'expense' ? 'gasto' : 'renda'} em todos os meses futuros?` : `Excluir esta ${entry.type === 'expense' ? 'gasto' : 'renda'} apenas neste mês?`;
             }
 
             if (confirm(confirmMessage)) {
-                if (entry.isRecurring && entry.type === 'expense') {
+                if (entry.isRecurring) {
                     const startMonthIndex = getMonthIndex(currentMonth);
                     removeRecurringEntries(entry, startMonthIndex, removeAll);
                 } else {
