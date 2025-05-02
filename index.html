@@ -1130,7 +1130,7 @@
             const totalExpenses = updateTotal();
             const totalIncome = entries
                 .filter(entry => entry.type === 'income')
-                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0, 0);
+                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
             const totalBudget = salary + totalIncome;
             const remaining = totalBudget - totalExpenses;
             const totalElement = document.getElementById('totalAmount');
