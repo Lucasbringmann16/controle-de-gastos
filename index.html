@@ -82,7 +82,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v1.2</title>
+    <title>Controle de Gastos v1.3</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <!-- Favicon -->
@@ -221,6 +221,10 @@
             justify-content: space-between;
             color: var(--text-color);
             font-size: 0.95em;
+            cursor: pointer;
+        }
+        .settings-menu li:hover {
+            background: var(--table-header-bg);
         }
         .settings-menu li i {
             margin-right: 8px;
@@ -461,6 +465,131 @@
         canvas {
             max-width: 100%;
         }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--container-background);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--card-shadow);
+            color: var(--text-color);
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+            color: var(--text-color);
+        }
+        .month-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .month-checkbox {
+            width: 48%;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.95em;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .generate-report-btn, .close-modal-btn, .close-report-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: var(--transition);
+        }
+        .generate-report-btn {
+            background: linear-gradient(135deg, var(--button-add-bg), var(--button-add-hover));
+            color: #fff;
+        }
+        .generate-report-btn:hover {
+            background: var(--button-add-hover);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+        .close-modal-btn, .close-report-btn {
+            background: linear-gradient(135deg, var(--button-cancel-bg), var(--button-cancel-hover));
+            color: #fff;
+        }
+        .close-modal-btn:hover, .close-report-btn:hover {
+            background: var(--button-cancel-hover);
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        }
+        .report-section {
+            background: var(--container-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-top: 25px;
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .report-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: var(--text-color);
+        }
+        .report-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .report-month {
+            background: var(--table-header-bg);
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .report-month h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            color: var(--text-color);
+        }
+        .expense-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .expense-item:last-child {
+            border-bottom: none;
+        }
+        .month-total {
+            margin-top: 10px;
+            font-weight: 500;
+            font-size: 1em;
+            color: var(--remaining-negative-color);
+        }
 
         /* Animações */
         @keyframes fadeIn {
@@ -548,6 +677,41 @@
                 margin-left: 10px;
                 margin-right: 10px;
             }
+            .modal-content {
+                padding: 15px;
+                width: 95%;
+            }
+            .modal-content h2 {
+                font-size: 1.3em;
+            }
+            .month-checkbox {
+                width: 100%;
+                font-size: 0.9em;
+            }
+            .generate-report-btn, .close-modal-btn {
+                padding: 6px 12px;
+                font-size: 0.9em;
+            }
+            .report-section {
+                margin-left: 10px;
+                margin-right: 10px;
+                padding: 10px;
+            }
+            .report-header h2 {
+                font-size: 1.3em;
+            }
+            .report-month {
+                padding: 10px;
+            }
+            .report-month h3 {
+                font-size: 1.1em;
+            }
+            .expense-item {
+                font-size: 0.85em;
+            }
+            .month-total {
+                font-size: 0.95em;
+            }
         }
 
         @media (max-width: 400px) {
@@ -622,13 +786,46 @@
                 margin-left: 8px;
                 margin-right: 8px;
             }
+            .modal-content {
+                padding: 10px;
+            }
+            .modal-content h2 {
+                font-size: 1.2em;
+            }
+            .month-checkbox {
+                font-size: 0.85em;
+            }
+            .generate-report-btn, .close-modal-btn {
+                padding: 5px 10px;
+                font-size: 0.85em;
+            }
+            .report-section {
+                margin-left: 8px;
+                margin-right: 8px;
+                padding: 8px;
+            }
+            .report-header h2 {
+                font-size: 1.2em;
+            }
+            .report-month {
+                padding: 8px;
+            }
+            .report-month h3 {
+                font-size: 1em;
+            }
+            .expense-item {
+                font-size: 0.8em;
+            }
+            .month-total {
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.2</h1>
+            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.3</h1>
             <button class="menu-button" onclick="toggleSettingsMenu()">
                 <i class="fas fa-gear"></i>
             </button>
@@ -653,6 +850,9 @@
                         <button onclick="setSalary()"><i class="fas fa-check"></i></button>
                         <span id="currentSalary" class="salary-value"></span>
                     </div>
+                </li>
+                <li onclick="openReportModal()">
+                    <span><i class="fas fa-file-alt"></i> Gerar Relatório</span>
                 </li>
             </ul>
         </div>
@@ -712,6 +912,25 @@
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
         <div class="chart-container">
             <canvas id="entryChart"></canvas>
+        </div>
+        <!-- Modal para seleção de meses -->
+        <div class="modal" id="reportModal" style="display: none;">
+            <div class="modal-content">
+                <h2>Selecionar Meses para o Relatório</h2>
+                <div class="month-checkboxes" id="monthCheckboxes"></div>
+                <div class="modal-buttons">
+                    <button class="generate-report-btn" onclick="generateReport()">Gerar Relatório</button>
+                    <button class="close-modal-btn" onclick="closeReportModal()">Fechar</button>
+                </div>
+            </div>
+        </div>
+        <!-- Seção para exibir o relatório -->
+        <div class="report-section" id="reportSection" style="display: none;">
+            <div class="report-header">
+                <h2>Relatório de Gastos</h2>
+                <button class="close-report-btn" onclick="closeReport()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="report-content" id="reportContent"></div>
         </div>
     </div>
 
@@ -1209,6 +1428,76 @@
             loadMonthData();
         }
 
+        function openReportModal() {
+            const modal = document.getElementById('reportModal');
+            const monthCheckboxes = document.getElementById('monthCheckboxes');
+            monthCheckboxes.innerHTML = months.map(month => `
+                <label class="month-checkbox">
+                    <input type="checkbox" value="${month}"> ${month}
+                </label>
+            `).join('');
+            modal.style.display = 'block';
+            document.getElementById('settingsMenu').classList.remove('active');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        function generateReport() {
+            const selectedMonths = Array.from(document.querySelectorAll('#monthCheckboxes input:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedMonths.length === 0) {
+                alert('Por favor, selecione pelo menos um mês para gerar o relatório.');
+                return;
+            }
+
+            const reportContent = document.getElementById('reportContent');
+            reportContent.innerHTML = '';
+
+            selectedMonths.forEach(month => {
+                const monthData = monthlyData[month] || { entries: [] };
+                const expenses = monthData.entries.filter(entry => entry.type === 'expense');
+                const totalExpenses = expenses.reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+
+                if (expenses.length === 0) {
+                    reportContent.innerHTML += `
+                        <div class="report-month">
+                            <h3>${month}</h3>
+                            <p>Nenhum gasto registrado neste mês.</p>
+                        </div>
+                    `;
+                } else {
+                    const expenseList = expenses.map(entry => `
+                        <div class="expense-item">
+                            <span>${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</span>
+                            <span>${isPrivacyMode ? '****' : formatCurrency(entry.amount)}</span>
+                            <span>${formatDate(entry.date)}</span>
+                        </div>
+                    `).join('');
+
+                    reportContent.innerHTML += `
+                        <div class="report-month">
+                            <h3>${month}</h3>
+                            <div class="expense-list">${expenseList}</div>
+                            <div class="month-total">
+                                Total de Gastos: ${isPrivacyMode ? '****' : formatCurrency(totalExpenses)}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            closeReportModal();
+            document.getElementById('reportSection').style.display = 'block';
+        }
+
+        function closeReport() {
+            document.getElementById('reportSection').style.display = 'none';
+            document.getElementById('reportContent').innerHTML = '';
+        }
+
         // Configurar delegação de eventos
         document.getElementById('entryTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
@@ -1221,12 +1510,17 @@
             }
         });
 
-        // Fechar menu ao clicar fora
+        // Fechar menu e modal ao clicar fora
         document.addEventListener('click', (event) => {
             const menu = document.getElementById('settingsMenu');
             const menuButton = document.querySelector('.menu-button');
+            const modal = document.getElementById('reportModal');
+            const modalContent = document.querySelector('.modal-content');
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
                 menu.classList.remove('active');
+            }
+            if (modal.style.display === 'block' && !modalContent.contains(event.target)) {
+                closeReportModal();
             }
         });
 
