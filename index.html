@@ -82,7 +82,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v1.3</title>
+    <title>Controle de Gastos v1.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <!-- Favicon -->
@@ -221,10 +221,6 @@
             justify-content: space-between;
             color: var(--text-color);
             font-size: 0.95em;
-            cursor: pointer;
-        }
-        .settings-menu li:hover {
-            background: rgba(40, 167, 69, 0.1);
         }
         .settings-menu li i {
             margin-right: 8px;
@@ -465,84 +461,6 @@
         canvas {
             max-width: 100%;
         }
-        .report-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        .modal-content {
-            background: var(--container-background);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-content h2 {
-            font-size: 1.2em;
-            margin: 0 0 15px;
-            color: var(--text-color);
-        }
-        .month-checkboxes {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .month-checkboxes label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95em;
-            color: var(--text-color);
-        }
-        .month-checkboxes input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        .modal-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.95em;
-            transition: var(--transition);
-        }
-        .modal-btn.confirm-btn {
-            background: linear-gradient(135deg, var(--button-add-bg), var(--button-add-hover));
-            color: #fff;
-        }
-        .modal-btn.confirm-btn:hover {
-            background: var(--button-add-hover);
-            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-        }
-        .modal-btn.cancel-btn {
-            background: linear-gradient(135deg, var(--button-cancel-bg), var(--button-cancel-hover));
-            color: #fff;
-        }
-        .modal-btn.cancel-btn:hover {
-            background: var(--button-cancel-hover);
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-        }
 
         /* Animações */
         @keyframes fadeIn {
@@ -556,7 +474,7 @@
         /* Media Queries para Responsividade */
         @media (max-width: 600px) {
             .container {
-                padding: 10px;
+                padding: 10px; /* Reduzido para telas menores */
             }
             .header {
                 flex-direction: column;
@@ -613,8 +531,8 @@
                 width: 80px;
             }
             table {
-                width: calc(100% - 20px);
-                margin: 0 10px;
+                width: calc(100% - 20px); /* Ajustado para margens menores */
+                margin: 0 10px; /* Margens ajustadas */
             }
             th, td {
                 padding: 10px 12px;
@@ -634,7 +552,7 @@
 
         @media (max-width: 400px) {
             .container {
-                padding: 8px;
+                padding: 8px; /* Reduzido ainda mais para telas muito pequenas */
             }
             .header {
                 margin-left: 8px;
@@ -687,8 +605,8 @@
                 width: 70px;
             }
             table {
-                width: calc(100% - 16px);
-                margin: 0 8px;
+                width: calc(100% - 16px); /* Ajustado para margens menores */
+                margin: 0 8px; /* Margens ajustadas */
             }
             th, td {
                 padding: 8px 10px;
@@ -710,7 +628,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.3</h1>
+            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.2</h1>
             <button class="menu-button" onclick="toggleSettingsMenu()">
                 <i class="fas fa-gear"></i>
             </button>
@@ -736,20 +654,7 @@
                         <span id="currentSalary" class="salary-value"></span>
                     </div>
                 </li>
-                <li onclick="openReportModal()">
-                    <span><i class="fas fa-file-pdf"></i> Gerar Relatório em PDF</span>
-                </li>
             </ul>
-        </div>
-        <div class="report-modal" id="reportModal" style="display: none;">
-            <div class="modal-content">
-                <h2>Selecione os Meses para o Relatório</h2>
-                <div class="month-checkboxes" id="monthCheckboxes"></div>
-                <div class="modal-buttons">
-                    <button class="modal-btn confirm-btn" onclick="generatePDFReport()"><i class="fas fa-check"></i> Gerar PDF</button>
-                    <button class="modal-btn cancel-btn" onclick="closeReportModal()"><i class="fas fa-times"></i> Cancelar</button>
-                </div>
-            </div>
         </div>
         <div class="month-selector">
             <label for="monthSelect">Selecione o Mês:</label>
@@ -1304,141 +1209,6 @@
             loadMonthData();
         }
 
-        function openReportModal() {
-            const modal = document.getElementById('reportModal');
-            const monthCheckboxes = document.getElementById('monthCheckboxes');
-            monthCheckboxes.innerHTML = months.map(month => `
-                <label>
-                    <input type="checkbox" value="${month}">
-                    ${month}
-                </label>
-            `).join('');
-            modal.style.display = 'flex';
-        }
-
-        function closeReportModal() {
-            const modal = document.getElementById('reportModal');
-            modal.style.display = 'none';
-        }
-
-        function generatePDFReport() {
-            const selectedMonths = Array.from(document.querySelectorAll('#monthCheckboxes input:checked'))
-                .map(checkbox => checkbox.value);
-
-            if (selectedMonths.length === 0) {
-                alert('Por favor, selecione pelo menos um mês para gerar o relatório.');
-                return;
-            }
-
-            // Gerar o conteúdo do relatório
-            let latexContent = `
-% Definindo o tipo de documento e configurações básicas
-\\documentclass[a4paper,12pt]{article}
-
-% Pacotes essenciais para formatação e codificação
-\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
-\\usepackage{lmodern}
-\\usepackage[english,portuguese]{babel}
-
-% Pacotes para layout e tabelas
-\\usepackage{geometry}
-\\geometry{left=2cm,right=2cm,top=2cm,bottom=2cm}
-\\usepackage{booktabs}
-\\usepackage{longtable}
-\\usepackage{array}
-
-% Pacotes para formatação de números e moedas
-\\usepackage{siunitx}
-\\sisetup{
-    output-decimal-marker={,},
-    group-separator={.},
-    group-minimum-digits=4
-}
-
-% Pacotes para cores e cabeçalhos
-\\usepackage{xcolor}
-\\usepackage{fancyhdr}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\fancyhead[L]{\\textbf{Controle de Gastos - Relatório Mensal}}
-\\fancyfoot[C]{\\thepage}
-
-% Definindo comandos personalizados
-\\newcommand{\\currency}[1]{\\SI{#1}{R\\$}}
-\\newcolumntype{R}{>{\\raggedleft\\arraybackslash}m{3cm}}
-
-% Configurações de fonte
-\\usepackage{noto}
-
-% Início do documento
-\\begin{document}
-
-% Título do relatório
-\\begin{center}
-    \\LARGE\\textbf{Relatório de Gastos e Rendas}\\\\
-    \\vspace{0.5cm}
-    \\normalsize Gerado em: ${new Date().toLocaleDateString('pt-BR')}
-\\end{center}
-
-\\vspace{1cm}
-`;
-
-            selectedMonths.forEach(month => {
-                const monthData = monthlyData[month] || { entries: [], salary: 0 };
-                const entries = monthData.entries || [];
-                const salary = monthData.salary || 0;
-
-                // Filtrar gastos e rendas
-                const expenses = entries.filter(entry => entry.type === 'expense');
-                const incomes = entries.filter(entry => entry.type === 'income');
-
-                // Calcular totais
-                const totalExpenses = expenses.reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
-                const totalIncomes = incomes.reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
-                const totalBalance = (salary + totalIncomes) - totalExpenses;
-
-                // Adicionar seção para o mês
-                latexContent += `
-% Seção para o mês
-\\section*{\\Large ${month}}
-\\vspace{0.5cm}
-
-% Tabela de entradas (gastos e rendas)
-\\begin{longtable}{p{5cm} p{3cm} R p{3cm}}
-    \\toprule
-    \\textbf{Descrição} & \\textbf{Tipo} & \\textbf{Valor (R\\$)} & \\textbf{Data} \\\\
-    \\midrule
-    \\endhead
-
-    % Listar o salário, se existir
-    ${salary > 0 ? `Salário & Renda & \\currency{${salary.toFixed(2)}} & -- \\\\` : ''}
-
-    % Listar rendas
-    ${incomes.map(entry => `${entry.name}${entry.isRecurring ? ' (Recorrente)' : ''} & Renda & \\currency{${entry.amount.toFixed(2)}} & ${formatDate(entry.date)} \\\\`).join('\n')}
-
-    % Listar gastos
-    ${expenses.map(entry => `${entry.name}${entry.isRecurring ? ' (Recorrente)' : ''} & Gasto & \\currency{${entry.amount.toFixed(2)}} & ${formatDate(entry.date)} \\\\`).join('\n')}
-
-    \\bottomrule
-\\end{longtable}
-
-% Total do mês
-\\vspace{0.5cm}
-\\noindent\\textbf{Saldo do Mês (${month}):} \\currency{${totalBalance.toFixed(2)}}\\\\
-\\vspace{1cm}
-`;
-            });
-
-            latexContent += `
-% Fim do documento
-\\end{document}
-`;
-
-            // Retornar o documento LaTeX para renderização
-            return latexContent;
-        }
-
         // Configurar delegação de eventos
         document.getElementById('entryTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
@@ -1455,12 +1225,8 @@
         document.addEventListener('click', (event) => {
             const menu = document.getElementById('settingsMenu');
             const menuButton = document.querySelector('.menu-button');
-            const reportModal = document.getElementById('reportModal');
             if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
                 menu.classList.remove('active');
-            }
-            if (reportModal.style.display === 'flex' && !reportModal.contains(event.target)) {
-                closeReportModal();
             }
         });
 
