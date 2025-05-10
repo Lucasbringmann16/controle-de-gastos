@@ -82,7 +82,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v1.2</title>
+    <title>Controle de Gastos v1.3</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <!-- Favicon -->
@@ -422,11 +422,31 @@
             background: var(--button-edit-hover);
             box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
+        .description-cell {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .description-cell:hover {
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+        .paid-icon {
+            color: var(--button-add-bg);
+            font-size: 16px;
+        }
+        .unpaid-icon {
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        .description-cell:hover .unpaid-icon {
+            color: var(--button-add-bg);
+        }
         .recurring-icon {
             color: var(--button-add-bg);
             margin-left: 5px;
         }
-        .total, .remaining {
+        .total, .remaining, .pending {
             font-size: 1.1em;
             font-weight: 500;
             text-align: right;
@@ -446,6 +466,10 @@
             color: var(--remaining-color);
         }
         .remaining.negative {
+            background-color: var(--remaining-negative-bg);
+            color: var(--remaining-negative-color);
+        }
+        .pending {
             background-color: var(--remaining-negative-bg);
             color: var(--remaining-negative-color);
         }
@@ -538,7 +562,7 @@
                 padding: 10px 12px;
                 font-size: 0.85em;
             }
-            .total, .remaining {
+            .total, .remaining, .pending {
                 font-size: 1em;
                 padding: 8px 12px;
                 margin-left: 10px;
@@ -612,7 +636,7 @@
                 padding: 8px 10px;
                 font-size: 0.8em;
             }
-            .total, .remaining {
+            .total, .remaining, .pending {
                 font-size: 0.95em;
                 padding: 6px 10px;
                 margin-left: 8px;
@@ -628,7 +652,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.2</h1>
+            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.3</h1>
             <button class="menu-button" onclick="toggleSettingsMenu()">
                 <i class="fas fa-gear"></i>
             </button>
@@ -710,6 +734,7 @@
         </table>
         <div class="total" id="totalAmount">Total de Gastos: R$ 0,00</div>
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
+        <div class="pending" id="pendingAmount">A Pagar: R$ 0,00</div>
         <div class="chart-container">
             <canvas id="entryChart"></canvas>
         </div>
@@ -752,12 +777,17 @@
                 if (!monthlyData[month]) {
                     monthlyData[month] = { entries: [], salary: 0 };
                 } else if (monthlyData[month].expenses) {
-                    // Migrar dados antigos
                     monthlyData[month].entries = monthlyData[month].expenses.map(expense => ({
                         ...expense,
-                        type: 'expense'
+                        type: 'expense',
+                        isPaid: false
                     }));
                     delete monthlyData[month].expenses;
+                } else {
+                    monthlyData[month].entries = monthlyData[month].entries.map(entry => ({
+                        ...entry,
+                        isPaid: entry.isPaid !== undefined ? entry.isPaid : false
+                    }));
                 }
             });
             saveMonthlyData();
@@ -887,8 +917,11 @@
                 const row = document.createElement('tr');
                 const valueColor = entry.type === 'income' ? 'var(--remaining-color)' : 'var(--remaining-negative-color)';
                 const displayValue = isPrivacyMode ? '****' : formatCurrency(entry.amount);
+                const paidIconClass = entry.isPaid ? 'fas fa-check-circle paid-icon' : 'far fa-circle unpaid-icon';
                 row.innerHTML = `
-                    <td>${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
+                    <td class="description-cell" data-index="${index}">
+                        <i class="${paidIconClass}"></i> ${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}
+                    </td>
                     <td style="color: ${valueColor}">${displayValue}</td>
                     <td>${formatDate(entry.date)}</td>
                     <td>
@@ -926,6 +959,15 @@
                 remainingElement.textContent = `Restante: ${formatCurrency(remaining)}`;
                 remainingElement.classList.toggle('negative', remaining < 0);
             }
+            updatePending();
+        }
+
+        function updatePending() {
+            const pendingExpenses = entries
+                .filter(entry => entry.type === 'expense' && !entry.isPaid)
+                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+            const pendingElement = document.getElementById('pendingAmount');
+            pendingElement.textContent = isPrivacyMode ? 'A Pagar: ****' : `A Pagar: ${formatCurrency(pendingExpenses)}`;
         }
 
         function updateChart() {
@@ -1053,7 +1095,8 @@
                     amount: entry.amount,
                     date: targetDate,
                     isRecurring: true,
-                    type: entry.type
+                    type: entry.type,
+                    isPaid: false
                 };
 
                 if (i === startMonthIndex && editingIndex !== null) {
@@ -1107,7 +1150,7 @@
                 const entryMonth = months[parseInt(month) - 1];
                 const startMonthIndex = getMonthIndex(entryMonth);
 
-                const newEntry = { name, amount, date, isRecurring, type };
+                const newEntry = { name, amount, date, isRecurring, type, isPaid: false };
 
                 if (editingIndex !== null) {
                     const oldEntry = entries[editingIndex];
@@ -1209,6 +1252,13 @@
             loadMonthData();
         }
 
+        function togglePaidStatus(index) {
+            entries[index].isPaid = !entries[index].isPaid;
+            monthlyData[currentMonth].entries = entries;
+            saveMonthlyData();
+            loadMonthData();
+        }
+
         // Configurar delegação de eventos
         document.getElementById('entryTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
@@ -1217,6 +1267,8 @@
                     editEntry(index);
                 } else if (event.target.classList.contains('delete-btn') || event.target.parentElement.classList.contains('delete-btn')) {
                     deleteEntry(index);
+                } else if (event.target.closest('.description-cell')) {
+                    togglePaidStatus(index);
                 }
             }
         });
