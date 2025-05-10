@@ -82,7 +82,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v1.2</title>
+    <title>Controle de Gastos v1.3</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#28a745">
     <!-- Favicon -->
@@ -426,6 +426,10 @@
             color: var(--button-add-bg);
             margin-left: 5px;
         }
+        .paid-icon {
+            color: var(--button-add-bg);
+            margin-right: 5px;
+        }
         .total, .remaining {
             font-size: 1.1em;
             font-weight: 500;
@@ -446,6 +450,24 @@
             color: var(--remaining-color);
         }
         .remaining.negative {
+            background-color: var(--remaining-negative-bg);
+            color: var(--remaining-negative-color);
+        }
+        .to-pay {
+            font-size: 1.1em;
+            font-weight: 500;
+            text-align: right;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-left: 15px;
+            margin-right: 15px;
+            background-color: var(--remaining-bg);
+            color: var(--remaining-color);
+        }
+
+        .to-pay.negative {
             background-color: var(--remaining-negative-bg);
             color: var(--remaining-negative-color);
         }
@@ -538,7 +560,7 @@
                 padding: 10px 12px;
                 font-size: 0.85em;
             }
-            .total, .remaining {
+            .total, .remaining, .to-pay {
                 font-size: 1em;
                 padding: 8px 12px;
                 margin-left: 10px;
@@ -612,7 +634,7 @@
                 padding: 8px 10px;
                 font-size: 0.8em;
             }
-            .total, .remaining {
+            .total, .remaining, .to-pay {
                 font-size: 0.95em;
                 padding: 6px 10px;
                 margin-left: 8px;
@@ -628,7 +650,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.2</h1>
+            <h1><i class="fas fa-wallet"></i> Controle de Gastos v1.3</h1>
             <button class="menu-button" onclick="toggleSettingsMenu()">
                 <i class="fas fa-gear"></i>
             </button>
@@ -710,6 +732,7 @@
         </table>
         <div class="total" id="totalAmount">Total de Gastos: R$ 0,00</div>
         <div class="remaining" id="remainingAmount">Restante: R$ 0,00</div>
+        <div class="to-pay" id="toPayAmount">A pagar: R$ 0,00</div>
         <div class="chart-container">
             <canvas id="entryChart"></canvas>
         </div>
@@ -752,10 +775,11 @@
                 if (!monthlyData[month]) {
                     monthlyData[month] = { entries: [], salary: 0 };
                 } else if (monthlyData[month].expenses) {
-                    // Migrar dados antigos
+                    // Migrar dados antigos e adicionar isPaid
                     monthlyData[month].entries = monthlyData[month].expenses.map(expense => ({
                         ...expense,
-                        type: 'expense'
+                        type: 'expense',
+                        isPaid: false
                     }));
                     delete monthlyData[month].expenses;
                 }
@@ -778,6 +802,7 @@
             updateSalaryDisplay();
             updateRemaining();
             updateChart();
+            updateToPay();
         }
 
         // Definir o mês atual ou próximo como padrão no <select>
@@ -887,8 +912,9 @@
                 const row = document.createElement('tr');
                 const valueColor = entry.type === 'income' ? 'var(--remaining-color)' : 'var(--remaining-negative-color)';
                 const displayValue = isPrivacyMode ? '****' : formatCurrency(entry.amount);
+                const paidIcon = entry.isPaid ? '<i class="fas fa-check paid-icon"></i>' : '';
                 row.innerHTML = `
-                    <td>${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
+                    <td style="cursor: pointer;" onclick="togglePaid(${index})">${paidIcon} ${entry.name}${entry.isRecurring ? ' <i class="fas fa-redo-alt recurring-icon"></i>' : ''}</td>
                     <td style="color: ${valueColor}">${displayValue}</td>
                     <td>${formatDate(entry.date)}</td>
                     <td>
@@ -904,6 +930,7 @@
             const totalExpenses = entries
                 .filter(entry => entry.type === 'expense')
                 .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+            document.getElementById('totalAmount').textContent = `Total de Gastos: ${formatCurrency(totalExpenses)}`;
             return totalExpenses;
         }
 
@@ -914,18 +941,23 @@
                 .reduce((sum, entry) => sum + parseFloat(entry.amount), 0, 0);
             const totalBudget = salary + totalIncome;
             const remaining = totalBudget - totalExpenses;
-            const totalElement = document.getElementById('totalAmount');
             const remainingElement = document.getElementById('remainingAmount');
-            
             if (isPrivacyMode) {
-                totalElement.textContent = 'Total de Gastos: ****';
                 remainingElement.textContent = 'Restante: ****';
                 remainingElement.classList.remove('negative');
             } else {
-                totalElement.textContent = `Total de Gastos: ${formatCurrency(totalExpenses)}`;
                 remainingElement.textContent = `Restante: ${formatCurrency(remaining)}`;
                 remainingElement.classList.toggle('negative', remaining < 0);
             }
+        }
+
+        function updateToPay() {
+            const totalExpenses = entries
+                .filter(entry => entry.type === 'expense' && !entry.isPaid)
+                .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+            const toPayElement = document.getElementById('toPayAmount');
+            toPayElement.textContent = `A pagar: ${formatCurrency(totalExpenses)}`;
+            toPayElement.classList.toggle('negative', totalExpenses > 0);
         }
 
         function updateChart() {
@@ -1053,7 +1085,8 @@
                     amount: entry.amount,
                     date: targetDate,
                     isRecurring: true,
-                    type: entry.type
+                    type: entry.type,
+                    isPaid: entry.isPaid
                 };
 
                 if (i === startMonthIndex && editingIndex !== null) {
@@ -1080,7 +1113,7 @@
                     const isSameEntry = ent.name === entryName && ent.amount === entryAmount && ent.isRecurring && ent.type === entryType;
                     if (!isSameEntry) return true;
                     if (removeAll) return false;
-                    return i < startMonthIndex;
+                    return i !== startMonthIndex; // Remove apenas no mês atual
                 });
             }
             saveMonthlyData();
@@ -1107,7 +1140,7 @@
                 const entryMonth = months[parseInt(month) - 1];
                 const startMonthIndex = getMonthIndex(entryMonth);
 
-                const newEntry = { name, amount, date, isRecurring, type };
+                const newEntry = { name, amount, date, isRecurring, type, isPaid: false };
 
                 if (editingIndex !== null) {
                     const oldEntry = entries[editingIndex];
@@ -1117,12 +1150,8 @@
                     entries[editingIndex] = newEntry;
                     monthlyData[currentMonth].entries = entries;
                 } else if (!isRecurring) {
-                    if (entryMonth === currentMonth) {
-                        entries.push(newEntry);
-                        monthlyData[currentMonth].entries = entries;
-                    } else {
-                        monthlyData[entryMonth].entries.push(newEntry);
-                    }
+                    // Adicionar apenas se não for recorrente
+                    monthlyData[entryMonth].entries.push(newEntry);
                 }
 
                 if (isRecurring) {
@@ -1209,6 +1238,14 @@
             loadMonthData();
         }
 
+        function togglePaid(index) {
+            entries[index].isPaid = !entries[index].isPaid;
+            monthlyData[currentMonth].entries = entries;
+            saveMonthlyData();
+            updateTable();
+            updateToPay();
+        }
+
         // Configurar delegação de eventos
         document.getElementById('entryTable').addEventListener('click', (event) => {
             const index = parseInt(event.target.getAttribute('data-index') || event.target.parentElement.getAttribute('data-index'));
@@ -1245,6 +1282,7 @@
         privacyIcon.classList.toggle('fa-eye', !isPrivacyMode);
         privacyIcon.classList.toggle('fa-eye-slash', isPrivacyMode);
         loadMonthData();
+        updateToPay();
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9387dbbc3f364520',t:'MTc0NjAyNDY5OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
